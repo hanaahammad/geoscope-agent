@@ -1,0 +1,81 @@
+/* vco-styles.css */
+
+/* General styles for VCO pages */
+.vco-archive,
+.vco-single {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.vco-archive h1,
+.vco-single h1 {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+/* Styles for VCO list items */
+.vco-item {
+    border-bottom: 1px solid #ccc;
+    padding: 20px 0;
+}
+
+.vco-item h2 {
+    margin-top: 0;
+}
+
+.vco-item h2 a {
+    text-decoration: none;
+    color: #333;
+}
+
+.vco-item h2 a:hover {
+    text-decoration: underline;
+}
+
+/* Styles for speakers */
+.vco-speaker {
+    margin-bottom: 30px;
+}
+
+.vco-speaker img {
+    float: left;
+    margin-right: 20px;
+    border-radius: 5px;
+}
+
+.vco-speaker h4 {
+    margin-top: 0;
+}
+
+.vco-speaker:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* Pagination styles */
+.vco-pagination {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.vco-pagination .page-numbers {
+    display: inline-block;
+    margin: 0 5px;
+    padding: 8px 12px;
+    background: #f5f5f5;
+    color: #333;
+    text-decoration: none;
+    border-radius: 3px;
+}
+
+.vco-pagination .current {
+    background: #0073aa;
+    color: #fff;
+}
+
+.vco-pagination .page-numbers:hover {
+    background: #0073aa;
+    color: #fff;
+}

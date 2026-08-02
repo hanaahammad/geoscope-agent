@@ -1,0 +1,124 @@
+.content-section {
+  background-color: #FFF;
+  padding-bottom: 7rem;
+  min-height: calc(100vh - 110px);
+}
+
+.content-section .header .page-header {
+  width: 100%;
+  display: inline-block;
+  border-bottom: 3px #64863b solid;
+}
+
+.news-event .card:hover .card-title {
+  text-decoration: underline;
+}
+
+.people-card {
+  border: none;
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.people-card:hover .card-img-top {
+  -webkit-box-shadow: 0 0.1rem 0.6rem rgba(0, 0, 0, 0.2);
+          box-shadow: 0 0.1rem 0.6rem rgba(0, 0, 0, 0.2);
+}
+
+.people-card .card-img-top {
+  display: inline-block;
+  padding-bottom: 100%;
+  width: 100%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border: 1px solid #E5E5E5;
+  border-radius: 50%;
+  -webkit-transition: all .2s;
+  transition: all .2s;
+}
+
+.people-card .name {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+}
+
+.people-card .position,
+.people-card .affiliation {
+  font-size: 0.8rem;
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  color: #909090;
+}
+
+.partner-logos .slide {
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  height: 100px;
+  padding: 0 15px;
+}
+
+.partner-logos .slide img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+  overflow: hidden;
+}
+
+.university-list {
+  width: 50%;
+  margin: 5rem auto;
+  list-style: none;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.university-list li {
+  padding: 15px 0;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.area .area-title {
+  color: #184848;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #E5E5E5;
+}
+
+.area p,
+.area .name {
+  margin: 0 !important;
+}
+
+.area .name {
+  padding-top: 1.2rem;
+}
+.curr-card {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 170px;
+    transition: all .5s;
+}
+.curr-card:hover {
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.5) !important;
+}
+
+.card-img-overlay {
+  background: rgb(2,0,36);
+  background: linear-gradient(0deg, rgba(2,0,36,1) 0%, rgba(0,0,0,0.12742980561555073) 41%, rgba(0,0,0,0) 100%); 
+}
+
+@media (max-width: 991.98px) {
+  .content-section {
+    padding-top: 10rem;
+    background-color: #FFF;
+    padding-bottom: 7rem;
+    min-height: calc(100vh - 110px);
+  }
+}
+
+/*# sourceMappingURL=page.css.map */
+

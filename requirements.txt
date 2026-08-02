@@ -1,0 +1,15 @@
+streamlit
+streamlit-folium
+folium
+pandas
+duckdb
+requests
+shapely
+langgraph
+pystac-client
+beautifulsoup4
+lxml
+chromadb
+pystac-client
+dlt[duckdb]
+openai

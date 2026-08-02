@@ -1,0 +1,16 @@
+﻿document_id,file_name,source_type,total_pages,pages_with_text,empty_pages,number_of_chunks,status
+arset_saragriculture2023_part1_slides,ARSET-SARAgriculture2023-part1-slides.pdf,pdf,24,24,0,24,success
+arset_saragriculture2023_part2_slides,ARSET-SARAgriculture2023-part2-slides.pdf,pdf,95,93,2,93,success
+arset_saragriculture2023_part3_slides,ARSET-SARAgriculture2023-part3-slides.pdf,pdf,62,62,0,65,success
+arset_thermal2026_part1_slides,ARSET-Thermal2026-part1-slides.pdf,pdf,61,61,0,63,success
+ecostress_sds_psd_l0_ver1,ECOSTRESS_SDS_PSD_L0_ver1.pdf,pdf,36,36,0,80,success
+lsds_1618_landsat_4_7_c2_l2_scienceproductguide_v3,LSDS-1618_Landsat-4-7_C2-L2-ScienceProductGuide-v3.pdf,pdf,43,43,0,91,success
+lsds_1619_landsat8_9_collection2_level2_science_product_guide_v6,LSDS-1619_Landsat8-9-Collection2-Level2-Science-Product-Guide-v6.pdf,pdf,45,45,0,104,success
+masada_user_guide_v2_0_identifiers_online_final,masada_user_guide_v2.0_identifiers_online_final.pdf,pdf,37,37,0,68,success
+mod13_user_guide_v5,MOD13_User_Guide_V5.pdf,pdf,42,42,0,90,success
+sentinel_1_user_handbook,Sentinel-1 User Handbook.pdf,pdf,80,80,0,155,success
+sentinel_2_user_handbook,Sentinel-2_User_Handbook.pdf,pdf,64,64,0,121,success
+thermal2026_trainingslides_part2_v1_4_sc_introoutro_recorded_1,Thermal2026-trainingslides_part2_v1.4_SC_IntroOutro_recorded (1).pdf,pdf,48,48,0,51,success
+introduction_to_the_geoai_foundation_model_and_its_application_i_guide,Introduction to the GeoAI Foundation Model and Its Application _ I-GUIDE.html,html,1,1,0,7,success
+nasa_and_ibm_openly_release_geospatial_ai_foundation_model_for_nasa_earth_observation_data_nasa_earthdata,NASA and IBM Openly Release Geospatial AI Foundation Model for NASA Earth Observation Data _ NASA Earthdata.html,html,1,0,1,0,no_text_extracted
+362839894_manual_of_sentinel_1_and_2_satellite_data_processing,362839894_Manual_of_Sentinel_1_and_2_Satellite_data_processing.htm,html,1,1,0,1,success

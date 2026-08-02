@@ -1,0 +1,21 @@
+﻿question_id,question,expected_document,domain,difficulty
+Q001,How can Sentinel-1 SAR support crop monitoring?,ARSET-SARAgriculture2023-part1-slides.pdf,Agriculture,Beginner
+Q002,Why is SAR useful for agricultural monitoring during cloudy periods?,ARSET-SARAgriculture2023-part1-slides.pdf,Agriculture,Beginner
+Q003,How can Sentinel-1 time series be used to observe crop development?,ARSET-SARAgriculture2023-part2-slides.pdf,Agriculture,Intermediate
+Q004,How can optical and radar observations be combined for agriculture?,ARSET-SARAgriculture2023-part3-slides.pdf,Agriculture,Intermediate
+Q005,Which Sentinel-2 bands are useful for vegetation monitoring?,Sentinel-2_User_Handbook.pdf,Sentinel-2,Beginner
+Q006,What spatial resolutions are available from Sentinel-2?,Sentinel-2_User_Handbook.pdf,Sentinel-2,Beginner
+Q007,Why are Sentinel-2 red-edge bands useful for crop analysis?,Sentinel-2_User_Handbook.pdf,Sentinel-2,Intermediate
+Q008,What is the MOD13 vegetation index product?,MOD13_User_Guide_V5.pdf,MODIS,Beginner
+Q009,How can MODIS vegetation indices support phenology analysis?,MOD13_User_Guide_V5.pdf,MODIS,Intermediate
+Q010,What are the spatial-resolution limitations of MODIS vegetation products?,MOD13_User_Guide_V5.pdf,MODIS,Intermediate
+Q011,Which Landsat product supports land-surface temperature analysis?,LSDS-1619_Landsat8-9-Collection2-Level2-Science-Product-Guide-v6.pdf,Landsat,Beginner
+Q012,What is included in Landsat Collection 2 Level-2 products?,LSDS-1619_Landsat8-9-Collection2-Level2-Science-Product-Guide-v6.pdf,Landsat,Intermediate
+Q013,How do Landsat 4-7 Level-2 products support historical analysis?,LSDS-1618_Landsat-4-7_C2-L2-ScienceProductGuide-v3.pdf,Landsat,Intermediate
+Q014,What is ECOSTRESS designed to measure?,ECOSTRESS_SDS_PSD_L0_ver1.pdf,Thermal,Beginner
+Q015,How can ECOSTRESS contribute to urban heat studies?,ECOSTRESS_SDS_PSD_L0_ver1.pdf,Thermal,Intermediate
+Q016,What is a geospatial foundation model?,Introduction to the GeoAI Foundation Model and Its Application _ I-GUIDE.html,Foundation models,Beginner
+Q017,How can a foundation model be applied to Earth observation?,Introduction to the GeoAI Foundation Model and Its Application _ I-GUIDE.html,Foundation models,Intermediate
+Q018,What information is provided by the Sentinel-1 User Handbook?,Sentinel-1 User Handbook.pdf,Sentinel-1,Beginner
+Q019,Which Sentinel-1 acquisition modes are described in the handbook?,Sentinel-1 User Handbook.pdf,Sentinel-1,Intermediate
+Q020,What information is provided by the Sentinel-2 User Handbook?,Sentinel-2_User_Handbook.pdf,Sentinel-2,Beginner

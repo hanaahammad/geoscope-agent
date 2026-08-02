@@ -1,0 +1,5 @@
+document_id,file_name,title,topic,sensor,application,region,language,source_type,priority,ingestion_status
+DOC-001,Sentinel-1_User_Handbook.pdf,Sentinel-1 User Handbook,Satellite mission,Sentinel-1,General,Global,English,Official handbook,High,Pending
+DOC-002,ARSET-SARAgriculture2023-part1-slides.pdf,SAR Agriculture Part 1,Agriculture,Sentinel-1,Crop monitoring,Global,English,Training slides,High,Pending
+DOC-003,MOD13_User_Guide_V5.pdf,MODIS Vegetation Indices User Guide,Vegetation monitoring,MODIS,Phenology,Global,English,Official guide,High,Pending
+DOC-004,Geospatial_Foundation_Models_Overview.pdf,Geospatial Foundation Models Overview,GeoAI,Multiple,Foundation models,Global,English,Technical overview,Medium,Pending

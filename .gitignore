@@ -1,0 +1,14 @@
+
+
+.venv/
+__pycache__/
+*.pyc
+
+.streamlit/secrets.toml
+.env
+
+logs/*.duckdb
+data/vector_store/
+
+.vscode/
+.idea/

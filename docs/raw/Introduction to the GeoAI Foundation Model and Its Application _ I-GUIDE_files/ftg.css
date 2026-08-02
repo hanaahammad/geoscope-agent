@@ -1,0 +1,543 @@
+.final-tiles-gallery {
+  position: relative;
+  perspective: 800px;
+}
+.final-tiles-gallery .tile img.item {
+  -moz-transition: -moz-transform 0.2s, opacity 0.2s ease-out;
+  -o-transition: -o-transform 0.2s, opacity 0.2s ease-out;
+  -webkit-transition: -webkit-transform 0.2s, opacity 0.2s ease-out;
+  transition: transform .2s ease-out;
+  display: block;
+  position: relative;
+  width: 100%;
+}
+.final-tiles-gallery .tile.ftg-enlarged img {
+  display: block;
+  margin: auto;
+}
+.final-tiles-gallery .loading-bar {
+  width: 100%;
+  display: block;
+  height: 2px;
+  position: relative;
+  top:-4px;
+}
+.final-tiles-gallery .loading-bar i {
+  width: 0%;
+  display: block;
+  height: 2px;
+  transition: all 1s;
+}
+.final-tiles-gallery .tile {
+  float: left;
+  overflow: hidden;
+  margin: 0;
+  opacity: 0;
+  display: none;
+  transition-property: all;
+  transform-origin:50% 50% 50px; 
+  transition-duration: .25s; 
+  perspective: 1000px;
+}
+html body .final-tiles-gallery .ftg-items .tile.ftg-loaded {
+  opacity: 1;
+  display: block;
+}
+.final-tiles-gallery .tile.ftg-filter-hidden-tile,
+.final-tiles-gallery .tile.ftg-hidden-tile {
+  -moz-transform: scale(0);
+  -webkit-transform: scale(0);
+  -ms-transform: scale(0);
+  transform: scale(0);
+  opacity: 0;
+  display: none !important;
+}
+.final-tiles-gallery .edge {
+  position: absolute;
+  z-index: 1000;
+  background: #333;
+  color: #fff;
+  font-size: 11px;
+  padding: 4px;
+  font-family: sans-serif;
+}
+.final-tiles-gallery .edge.enlarged-true {
+  color: yellow;
+}
+.final-tiles-gallery .ftg-social {
+  position: absolute;
+  transition: all .5s;
+  z-index: 20;
+}
+
+.final-tiles-gallery .woo {
+  display: block;
+  text-align: center;
+  margin-top:10px;
+}
+.final-tiles-gallery .woo:hover {
+  text-decoration: underline;
+}
+
+.final-tiles-gallery .ftg-social a {
+  color: #fff;
+  text-decoration: none;
+  border: 0;
+  text-align: center;
+  font-size: 16px;
+  transition: all .3s;
+}
+.final-tiles-gallery .ftg-social a:hover {
+  color: #ccc;
+}
+.final-tiles-gallery .hover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: #000;
+  background-color: rgba(0, 0, 0, 0.7);
+  transition: all .3s;
+  opacity: 0;
+  display: table;
+  width: 100%;
+  height: 100%;
+}
+.final-tiles-gallery .hover .icon {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  color: #fff;
+  font-size: 20px;
+}
+.final-tiles-gallery .tile:hover .hover {
+  opacity: 1;
+}
+.final-tiles-gallery .tile iframe.item {
+  width: 100% !important;
+}
+.final-tiles-gallery .ftg-filters {
+  margin-bottom: 20px;
+  text-align: center;
+}
+.final-tiles-gallery .ftg-filters a {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  color: #777;
+  padding: 4px 10px;
+  border: 1px solid #777;
+  text-decoration: none;
+  outline: 0;
+  text-shadow: none;
+  box-shadow: none;
+}
+.final-tiles-gallery .ftg-filters a:hover,
+.final-tiles-gallery .ftg-filters a.selected {
+  color: #000;
+  border-color: #333;
+  text-decoration: none;
+}
+.final-tiles-gallery .tile .caption-block {
+  display: inline-block;
+  position: absolute;
+  color: #fff;
+  z-index: 11;
+  left: 20px;
+  right: 20px;
+  opacity: 0;
+  transition: all .25s;
+}
+.final-tiles-gallery.caption-frame .tile .caption-block {
+  border:1px solid #fff;
+}
+.final-tiles-gallery.caption-frame .tile .caption-outside {
+  border:1px solid #fff;
+  padding: 0 10px;
+  margin-top: 3px;
+}
+.final-tiles-gallery.caption-frame.caption-middle .tile .caption-block {
+  top:10px;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  padding: 10px; 
+}
+.final-tiles-gallery .tile-inner:before {
+  background: rgba(0, 0, 0, 0.7);
+  position: absolute;
+  top:0;
+  left:0;
+  bottom:0;
+  right:0;  
+  content: "";
+  opacity: 0;
+  transition: all .3s;
+  z-index: 10;
+}
+.final-tiles-gallery .tile .caption-block .text-wrapper span.title,
+.final-tiles-gallery .tile .caption-block .text-wrapper span.text,
+.final-tiles-gallery .tile .caption-block .text-wrapper span.text .ftg-meta {
+  display: block;
+}
+.final-tiles-gallery .tile span.icon {
+  position: absolute;
+  top:50%;
+  left:50%;
+  z-index: 10;
+  opacity: 0;
+  transition: all .3s;
+}
+.final-tiles-gallery .tile:hover span.icon {
+  opacity: 1;
+}
+.final-tiles-gallery.caption-color-dark .tile .caption-block .text-wrapper span.title,
+.final-tiles-gallery.caption-color-dark .tile .caption-block .text-wrapper span.text {
+  color: #fff;
+}
+.final-tiles-gallery.caption-color-light .tile .caption-block .text-wrapper span.title,
+.final-tiles-gallery.caption-color-light .tile .caption-block .text-wrapper span.text {
+  color: #000;
+}
+.final-tiles-gallery.caption-color-light .tile-inner:before {
+  background: rgba(255, 255, 255, 0.7);
+}
+.final-tiles-gallery.ftg-hover-enabled .tile.hover .tile-inner:before,
+.final-tiles-gallery.ftg-hover-enabled .tile:hover .tile-inner:before {
+  opacity: 1;
+}
+.final-tiles-gallery .tile .caption-block span.title {
+  font-size: 16px;
+  margin:0;
+}
+.final-tiles-gallery .tile .caption-block span.text {
+  font-size: 12px;
+  margin:10px 0 0 0;
+  opacity: .8;
+}
+.final-tiles-gallery .tile .caption-block .text-wrapper {
+  width:100%;
+}
+.final-tiles-gallery.caption-center-text .tile .caption-block span.title,
+.final-tiles-gallery.caption-center-text .tile .caption-block span.text {
+  text-align: center;
+  display: block;
+}
+/* EFFECT: IMG FADE OUT */
+.final-tiles-gallery.effect-fade-out .tile img {
+  transition: all 0.5s;
+  opacity: 1; 
+}
+.final-tiles-gallery.effect-fade-out.ftg-hover-enabled .tile.hover img,
+.final-tiles-gallery.effect-fade-out.ftg-hover-enabled .tile:hover img {
+  opacity: .5;
+}
+/* EFFECT: DEEP ZOOM IN */
+.final-tiles-gallery.effect-deep-zoom-in .tile:hover img {
+  -moz-transform: perspective(1000px) translate3d(0px, 0px, 400px);
+  -webkit-transform: perspective(1000px) translate3d(0, 0, 400px);
+  -ms-transform: perspective(1000px) translate3d(0px, 0px, 400px);
+  transform: perspective(1000px) translate3d(0px, 0px, 400px);
+}
+/* EFFECT: ZOOM IN */
+.final-tiles-gallery.effect-deep-zoom-in .tile img,
+.final-tiles-gallery.effect-zoom-in .tile img {
+  -moz-transform: perspective(1000px) translate3d(0, 0, 0);
+  -webkit-transform: perspective(1000px) translate3d(0, 0, 0);
+  -ms-transform: perspective(1000px) translate3d(0, 0, 0);
+  transform: perspective(1000px) translate3d(0, 0, 0);
+  position: relative;
+  display: block;
+}
+.final-tiles-gallery.effect-zoom-in.ftg-hover-enabled .tile:hover img {
+  -moz-transform: perspective(1000px) translate3d(0px, 0px, 200px);
+  -webkit-transform: perspective(1000px) translate3d(0, 0, 200px);
+  -ms-transform: perspective(1000px) translate3d(0px, 0px, 200px);
+  transform: perspective(1000px) translate3d(0px, 0px, 200px);
+}
+/* EFFECT: ZOOM OUT */
+.final-tiles-gallery.effect-zoom-out .tile img {
+  opacity: 1;
+  -moz-transform: scale(1.12);
+  -webkit-transform: scale(1.12);
+  -ms-transform: scale(1.12);
+  transform: scale(1.12);
+}
+.final-tiles-gallery.effect-deep-zoom-out.ftg-hover-enabled .tile:hover img,
+.final-tiles-gallery.effect-zoom-out.ftg-hover-enabled .tile:hover img {
+	-moz-transform: scale(1);
+	-webkit-transform: scale(1);
+	-ms-transform: scale(1);
+	transform: scale(1);
+}
+/* EFFECT: DEEP ZOOM OUT */
+.final-tiles-gallery.effect-deep-zoom-out .tile img {
+  opacity: 1;
+  -moz-transform: scale(1.5);
+  -webkit-transform: scale(1.5);
+  -ms-transform: scale(1.5);
+  transform: scale(1.5);
+}
+
+.final-tiles-gallery.effect-speed-very-slow .tile img { transition-duration: 1s; }
+.final-tiles-gallery.effect-speed-slow .tile img { transition-duration: .5s; }
+.final-tiles-gallery.effect-speed-medium .tile img { transition-duration: .35s; }
+.final-tiles-gallery.effect-speed-fast .tile img { transition-duration: .2s; }
+.final-tiles-gallery.effect-speed-very-fast .tile img { transition-duration: .1s; }
+
+.final-tiles-gallery.caption-left .tile .caption-block, .final-tiles-gallery.caption-left .tile .caption-outside { text-align: left; }
+.final-tiles-gallery.caption-center .tile .caption-block, .final-tiles-gallery.caption-center .tile .caption-outside { text-align: center; }
+.final-tiles-gallery.caption-right .tile .caption-block, .final-tiles-gallery.caption-right .tile .caption-outside { text-align: right; }
+
+/* CAPTION TOP */
+.final-tiles-gallery.caption-top .tile .caption-block {
+  top: 20px;
+}
+/* CAPTION BOTTOM */
+.final-tiles-gallery.caption-bottom .tile .caption-block {
+  bottom: 20px;
+  top: auto;
+}
+/* CAPTION MIDDLE */
+.final-tiles-gallery.caption-middle .tile .caption-block {
+  position: absolute;
+  top:0;
+  bottom:0;
+  display: flex;
+  align-items: center;
+}
+.final-tiles-gallery.ftg-hover-enabled .tile.hover .caption-block,
+.final-tiles-gallery.ftg-hover-enabled .tile:hover .caption-block {
+  opacity: 1;
+}
+/* CAPTION FIXED */
+.final-tiles-gallery.caption-fixed .tile .caption-block {
+  opacity: 1;
+}
+/* CAPTION FLIP HORIZ */
+.final-tiles-gallery.caption-flip-h .tile {
+  perspective: 1000px;
+}
+.final-tiles-gallery.caption-flip-h .tile .tile-inner {
+  position: static;
+}
+.final-tiles-gallery.caption-flip-h.ftg-hover-enabled .tile:hover .tile-inner {
+  transform: rotateY(180deg);
+}
+.final-tiles-gallery.caption-flip-h .tile .tile-inner {
+  transition: 0.6s;
+  transform-style: preserve-3d;
+  position: static;
+  display: block;
+}
+.final-tiles-gallery.caption-flip-h .tile:hover .tile-inner:before {
+  display: none;
+}
+.final-tiles-gallery.caption-flip-h .tile .tile-inner .item,
+.final-tiles-gallery.caption-flip-h .tile .tile-inner .caption-block {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;    
+}
+.final-tiles-gallery.caption-flip-h .tile .tile-inner .item {
+  z-index: 2;
+  /* for firefox 31 */
+  transform: rotateY(0deg);
+}
+.final-tiles-gallery.caption-flip-h .tile .tile-inner .caption-block {
+  transform: rotateY(180deg); 
+  left: 0;
+  right: 0;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+/* CAPTION FIXED WITH BACKGROUND */
+.final-tiles-gallery.caption-fixed-bg .tile .caption-block {
+  opacity: 1;
+}
+.final-tiles-gallery.caption-fixed-bg .tile .tile-inner:before {
+  opacity: 1;
+}
+/* CAPTION FIXED THEN HIDDEN */
+.final-tiles-gallery.caption-fixed-then-hidden .tile .caption-block,
+.final-tiles-gallery.caption-fixed-then-hidden .tile .tile-inner:before {
+  opacity: 1;
+}
+.final-tiles-gallery.caption-fixed-then-hidden.ftg-hover-enabled .tile:hover .caption-block,
+.final-tiles-gallery.caption-fixed-then-hidden.ftg-hover-enabled .tile:hover .tile-inner:before {
+  opacity: 0;
+}
+/* CAPTION SLIDE TOP */
+.final-tiles-gallery.caption-slide-from-top.ftg-hover-enabled .tile:hover .caption-block {
+  opacity: 1;
+  -moz-transform: translateY(0);
+  -webkit-transform: translateY(0);
+  -ms-transform: translateY(0);
+  transform: translateY(0);
+}
+.final-tiles-gallery.caption-slide-from-top .tile .caption-block {      
+  opacity: 0;
+  transition: all .5s;
+  -moz-transform: translateY(-50px);
+  -webkit-transform: translateY(-50px);
+  -ms-transform: translateY(-50px);
+  transform: translateY(-50px);
+}
+
+/* CAPTION FIXED BOTTOM */
+.final-tiles-gallery.caption-fixed-bottom .tile .caption-block {
+	bottom:0;
+	left:0;
+	right:0;
+	background:transparent;
+	opacity: 1;
+}
+.final-tiles-gallery.caption-fixed-bottom .tile .caption-block .text-wrapper {
+	position: absolute;
+  bottom: 0;
+  top:auto;
+  left:0;
+  right:0;
+  padding-bottom: 20px;
+  padding-top: 20px;
+	background: -moz-linear-gradient(top,  rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 49%, rgba(0,0,0,0.8) 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.8) 49%,rgba(0,0,0,0.8) 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to bottom,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.8) 49%,rgba(0,0,0,0.8) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00000000', endColorstr='#cc000000',GradientType=0 ); /* IE6-9 */
+}
+
+.final-tiles-gallery.caption-fixed-bottom.caption-color-light .tile .caption-block .text-wrapper {
+	/* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#ffffff+0,ffffff+100&0+0,0.8+49 */
+	background: -moz-linear-gradient(top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 49%, rgba(255,255,255,0.8) 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(top, rgba(255,255,255,0) 0%,rgba(255,255,255,0.8) 49%,rgba(255,255,255,0.8) 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to bottom, rgba(255,255,255,0) 0%,rgba(255,255,255,0.8) 49%,rgba(255,255,255,0.8) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ccffffff',GradientType=0 ); /* IE6-9 */
+}
+
+/* CAPTION SLIDE FROM BOTTOM */
+.final-tiles-gallery.caption-slide-from-bottom.ftg-hover-enabled .tile:hover .caption-block {
+  opacity: 1;
+  -moz-transform: translateY(0);
+  -webkit-transform: translateY(0);
+  -ms-transform: translateY(0);
+  transform: translateY(0);
+}
+.final-tiles-gallery.caption-slide-from-bottom .tile .caption-block {      
+  opacity: 0;
+  transition: all .5s;
+  -moz-transform: translateY(50px);
+  -webkit-transform: translateY(50px);
+  -ms-transform: translateY(50px);
+  transform: translateY(50px);
+}
+
+/* EFFECT FRAME */
+.final-tiles-gallery.effect-frame.ftg-hover-enabled .tile:hover .tile-inner:before {  
+  opacity: 1;
+  -moz-transform: scale(1);
+  -webkit-transform: scale(1);
+  -ms-transform: scale(1);
+  transform: scale(1);
+}
+.final-tiles-gallery.effect-frame .tile .tile-inner:before {
+  opacity: 0;
+  border: 1px solid #fff;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  bottom: 10px;
+  right: 10px;
+  z-index: 10;
+  content: "";
+  display: block;
+  -moz-transform: scale(0.5);
+  -ms-transform: scale(0.5);
+  -webkit-transform: scale(0.5);
+  transform: scale(0.5);
+  transition: all .35s;
+}
+/* CAPTION BACKGROUND */
+.final-tiles-gallery.caption-bg .tile span {
+  background: #fff;
+  background: rgba(255, 255, 255, 0.7);
+  color: #333;
+  padding: 2px 6px;
+}
+/* SOCIAL ICONS BACKGROUND */
+.final-tiles-gallery.social-icons-bar .ftg-social {
+  background: rgba(0, 0, 0, .7);
+  box-shadow: 0px 0px 10px #000;
+}
+.final-tiles-gallery.social-icons-bar .ftg-social a {
+  color: #333;
+}
+.final-tiles-gallery.social-icons-bar .ftg-social a:hover {
+  color: #555;
+}
+/* SOCIAL ICONS DARK BACKGROUND */
+.final-tiles-gallery.social-icons-bar.social-icons-bar-dark .ftg-social {
+  background: #333;
+}
+.final-tiles-gallery.social-icons-bar.social-icons-bar-dark .ftg-social a {
+  color: #333;
+}
+.final-tiles-gallery.social-icons-bar.social-icons-bar-dark .ftg-social a:hover {
+  color: #eee;
+}
+/* SOCIAL ICONS RIGHT */
+.final-tiles-gallery.social-icons-right .ftg-social {
+  width: 40px;
+  top: 0;
+  height: 100%;
+  right: -50px;
+  z-index: 20;
+}
+.final-tiles-gallery.social-icons-right .ftg-social a {
+  margin: 10px 0;
+  display: block;
+}
+.final-tiles-gallery.social-icons-right .tile:hover .ftg-social {
+  right: 0;
+}
+/* SOCIAL ICONS BOTTOM */
+.final-tiles-gallery.social-icons-bottom .ftg-social {
+  width: 100%;
+  bottom: -40px;
+  height: 30px;
+  text-align: right;
+}
+.final-tiles-gallery.social-icons-bottom .ftg-social a {
+  margin: 0 5px;
+  display: inline-block;
+}
+.final-tiles-gallery.social-icons-bottom .ftg-social a:last-of-type {
+  margin-right: 15px;
+}
+.final-tiles-gallery.social-icons-bottom .tile:hover .ftg-social {
+  bottom: 0;
+}
+.final-tiles-gallery.social-icons-bottom.social-icons-circle .ftg-social {
+  height: 36px;
+}
+.final-tiles-gallery.social-icons-bottom.social-icons-bar .ftg-social {
+  height: 40px;
+}
+.final-tiles-gallery.social-icons-bottom.social-icons-bar .ftg-social a {
+  margin: 10px 5px;  
+}
+/* SOCIAL ICONS CIRCLE */
+.final-tiles-gallery.social-icons-circle .ftg-social a {
+  margin: 5px;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  display: inline-block;
+  background: #333;
+  color: #333;
+}
+.final-tiles-gallery.social-icons-circle .ftg-social a:hover {
+  color: #fff;
+  background-color: #333;
+}

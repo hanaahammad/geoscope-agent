@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 32 32"
+   fill="none"
+   version="1.1"
+   id="svg5"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs9" />
+  <g
+     id="Social">
+    <circle
+       id="circle801"
+       cx="16"
+       cy="16"
+       r="16"
+       fill="#2E2E32" />
+    <path
+       id="path798"
+       fill-rule="evenodd"
+       clip-rule="evenodd"
+       d="M10.7348 21.7981C13.2225 21.9687 18.7716 21.9687 21.2628 21.7981C23.9579 21.6132 24.2744 20.3012 24.2957 16.0001C24.2744 11.7074 23.9615 10.3871 21.2628 10.2022C18.7728 10.0316 13.2225 10.0316 10.7348 10.2022C8.0409 10.3871 7.72327 11.6991 7.70312 16.0001C7.72327 20.2929 8.03735 21.6132 10.7348 21.7981ZM13.6268 13.2246L19.4544 15.9955L13.6268 18.776V13.2246Z"
+       fill="white" />
+  </g>
+</svg>
