@@ -13,3 +13,10 @@ chromadb
 pystac-client
 dlt[duckdb]
 openai
+rasterio
+numpy
+shapely
+requests
+pystac-client
+streamlit-folium
+folium
