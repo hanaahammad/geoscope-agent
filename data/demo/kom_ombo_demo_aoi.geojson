@@ -1,0 +1,34 @@
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Kom Ombo demonstration AOI",
+    "note": "Fallback study-area bounding box; not an official administrative boundary."
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          32.87,
+          24.4
+        ],
+        [
+          33.03,
+          24.4
+        ],
+        [
+          33.03,
+          24.56
+        ],
+        [
+          32.87,
+          24.56
+        ],
+        [
+          32.87,
+          24.4
+        ]
+      ]
+    ]
+  }
+}

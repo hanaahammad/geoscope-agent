@@ -1,310 +1,405 @@
 # GeoScope Agent
 
-GeoScope is an AOI-aware GeoAI assistant for remote-sensing dataset selection and workflow planning.
+**GeoScope Agent** is an AI-assisted remote-sensing application that
+combines technical-document retrieval, geographic context, live
+Sentinel-2 catalogue search, raster processing, evaluation, feedback,
+and monitoring.
 
-It combines an interactive map, STAC satellite metadata, a local document knowledge base, vector retrieval, local LLM generation, retrieval evaluation, LLM-as-a-judge, logging, monitoring, and user feedback in one Streamlit application.
+It is a capstone project developed for the **LLM Zoomcamp**.
 
-## Main use cases
+## Problem
 
-GeoScope can support questions related to:
+Remote-sensing users often need to answer several connected questions:
 
-- Agriculture and crop monitoring
-- Sentinel-1 SAR analysis
-- Sentinel-2 optical analysis
-- Landsat and urban heat
-- MODIS and phenology
-- Flood assessment
-- Land-cover change
-- GeoAI and remote-sensing foundation models
+- Which dataset or sensor should be used?
+- Which spectral bands are relevant?
+- Are suitable scenes available for the selected location and period?
+- Do the returned scene items represent several dates or only several
+  tiles from one date?
+- Can the recommendation be translated into an executable raster
+  product?
 
-## What makes GeoScope different?
+A conventional chatbot may answer the technical question without
+checking actual data availability. GeoScope connects document knowledge
+with an Area of Interest (AOI), a STAC catalogue, and a small executable
+GeoAI workflow.
 
-GeoScope does not return a generic answer only from an LLM. It combines the user question, selected Area of Interest, application context, available Sentinel-2 scene metadata, and relevant technical guidance retrieved from the knowledge base.
+## What GeoScope does
 
-## Core concepts
+GeoScope supports:
 
-### Remote sensing
-
-Remote sensing is the observation of the Earth without direct physical contact. Satellites record reflected or emitted energy from vegetation, water, land, buildings, and the atmosphere.
-
-### AOI
-
-AOI means Area of Interest. It is the polygon or rectangle selected by the user on the map and included in the application context and logs.
-
-### STAC
-
-STAC means SpatioTemporal Asset Catalog. GeoScope uses a STAC API to search Sentinel-2 scenes by geographic area, date range, cloud-cover threshold, and collection.
-
-The current MVP retrieves metadata and preview links. It does not download or process full satellite images.
-
-### RAG
-
-RAG means Retrieval-Augmented Generation. Before the LLM answers, GeoScope retrieves relevant document chunks from the local vector database and provides them as context.
-
-## Main workflow
-
-```text
-Prepare documents
-      ↓
-Build vector index
-      ↓
-Draw AOI
-      ↓
-Search Sentinel-2 scenes through STAC
-      ↓
-Ask a GeoAI question
-      ↓
-Retrieve relevant document chunks
-      ↓
-Generate a grounded answer
-      ↓
-Evaluate retrieval and generation
-      ↓
-Log and monitor the run
-```
-
-## Application pages
-
-### 1. Data Preparation
-
-- Upload PDF, HTML, or HTM files
-- Add documents to `docs/raw`
-- Run document ingestion
-- Extract and chunk text
-- Build or update the Chroma vector index
-- Review document-processing results
-
-### 2. AOI and STAC
-
-- Draw an AOI on an interactive map
-- Select a date range
-- Define a maximum cloud-cover threshold
-- Search Sentinel-2 scenes
-- Review scene metadata and previews
-- Save the AOI and STAC context for the next pages
-
-### 3. Ask GeoAI
-
-- Select an application
-- Select a crop and season
-- Choose from example questions
-- Ask a custom question
-- Retrieve relevant document chunks
-- Generate a local LLM answer
-- Review the retrieved sources
-
-### 4. Evaluation and Feedback
-
-Retrieval evaluation includes ground-truth questions, expected documents, top-k search, Hit Rate, Mean Reciprocal Rank, and failed retrieval cases.
-
-Generation evaluation includes LLM-as-a-judge, relevance, groundedness, completeness, technical correctness, citation quality, geographic relevance, overall score, and judge comments.
-
-### 5. Monitoring
-
-- Logged questions
-- Application, crop, and season
-- AOI description
-- STAC scene count
-- Date range
-- Cloud-cover threshold
-- Latency
-- Run status
-- Interactive charts
-- Search and filters
-- CSV export
+- PDF and HTML document ingestion;
+- text extraction, cleaning, chunking, and embeddings;
+- persistent Chroma vector storage;
+- semantic vector retrieval;
+- LLM-based query rewriting;
+- FlashRank reranking;
+- comparison of four retrieval approaches;
+- local Ollama generation and judging;
+- optional OpenAI reviewer mode;
+- AOI drawing on an interactive map;
+- AOI search by place name;
+- Sentinel-2 STAC search by AOI, date, and cloud cover;
+- distinct acquisition-date validation;
+- Red, NIR, and NDVI GeoTIFF generation;
+- retrieval evaluation with Hit Rate and MRR;
+- LLM-as-a-judge generation evaluation;
+- explicit thumbs-up/thumbs-down feedback;
+- DuckDB/dlt run logging and a Streamlit monitoring dashboard;
+- an end-to-end automated demonstration page.
 
 ## Architecture
 
 ```text
-Streamlit UI
-    │
-    ├── Document upload and ingestion
-    │       └── PDF / HTML / HTM
-    │
-    ├── Chroma vector store
-    │       └── Ollama embeddings
-    │
-    ├── AOI map
-    │       └── Folium / streamlit-folium
-    │
-    ├── STAC search
-    │       └── Earth Search
-    │
-    ├── RAG generation
-    │       └── Ollama local model
-    │
-    ├── Evaluation
-    │       ├── Hit Rate and MRR
-    │       └── LLM-as-a-judge
-    │
-    └── Monitoring
-            ├── DuckDB
-            └── dlt
+PDF / HTML documents
+        │
+        ▼
+┌────────────────────────────┐
+│ Document ingestion         │
+│ extract → clean → chunk    │
+│ Ollama embeddings          │
+└─────────────┬──────────────┘
+              ▼
+       Chroma vector store
+              │
+User question │
+      │       │
+      ▼       │
+Query rewriting
+      │
+      ▼
+Vector candidate retrieval
+      │
+      ▼
+FlashRank reranking
+      │
+      ▼
+Top context chunks ──────────────────────┐
+                                         │
+AOI drawn or searched by text            │
+      │                                  │
+      ▼                                  │
+Sentinel-2 STAC search                   │
+date + cloud filters                     │
+      │                                  │
+      ▼                                  │
+Scene count + distinct-date validation ──┤
+                                         ▼
+                                Ollama / OpenAI LLM
+                                         │
+                                         ▼
+                              Grounded GeoAI answer
+                                         │
+                       ┌─────────────────┴──────────────┐
+                       ▼                                ▼
+              Red / NIR / NDVI                 Evidence display
+                       │
+                       ▼
+              Downloadable GeoTIFF
+
+User feedback + run logs → DuckDB/dlt → Streamlit monitoring
 ```
 
-## Technology stack
+## Retrieval approaches
 
-- Python
-- Streamlit
-- Folium
-- streamlit-folium
-- ChromaDB
-- Ollama
-- DuckDB
-- dlt
-- pandas
-- requests
-- PyPDF
-- BeautifulSoup
-- Altair
+GeoScope implements and evaluates four real pipelines:
 
-## Local models
+| Approach | Flow |
+|---|---|
+| Vector search | Original query → Chroma |
+| Query rewriting | Rewritten query → Chroma |
+| Reranking | Original query → Chroma candidates → FlashRank |
+| Full pipeline | Rewritten query → Chroma candidates → FlashRank |
 
-Recommended local configuration:
-
-- Generator: `qwen2.5:7b-instruct`
-- Embeddings: `nomic-embed-text:latest`
-- Judge: `llama3.1:8b`
-- Optional reasoning judge: `deepseek-r1:8b`
+The evaluation page runs the same ground-truth questions through all
+four pipelines and compares Hit Rate and MRR.
 
 ## Project structure
 
 ```text
 GeoScope_Agent/
 ├── GeoScope.py
-├── requirements.txt
-├── README.md
-├── .streamlit/
-│   └── config.toml
 ├── pages/
 │   ├── 1_Data_Preparation.py
 │   ├── 2_AOI_and_STAC.py
 │   ├── 3_Ask_GeoAI.py
 │   ├── 4_Evaluation_and_Feedback.py
-│   └── 5_Monitoring.py
+│   ├── 5_Monitoring.py
+│   └── 6_Automated_Demo.py
 ├── src/
-│   ├── __init__.py
-│   ├── ui.py
 │   ├── ingest_documents.py
 │   ├── build_vector_index.py
 │   ├── retrieval.py
+│   ├── query_rewrite.py
+│   ├── reranking.py
 │   ├── generation.py
-│   ├── evaluation.py
+│   ├── llm_provider.py
+│   ├── geocoding.py
 │   ├── stac_search.py
+│   ├── geotiff_processing.py
+│   ├── evaluation.py
 │   ├── monitoring.py
-│   └── dlt_logging.py
-├── docs/
-│   ├── raw/
-│   └── processed/
+│   ├── dlt_logging.py
+│   ├── demo_runner.py
+│   └── ui.py
 ├── data/
+│   ├── vector_store/
+│   ├── flashrank_cache/
 │   ├── evaluation_questions.csv
-│   └── vector_store/
-└── logs/
+│   └── demo/
+├── docs/
+│   └── USER_GUIDE.md
+├── requirements.txt
+└── README.md
 ```
 
-## Installation
+## Prerequisites
 
-### 1. Clone or download the project
+- Python 3.11 recommended
+- Ollama installed and running
+- Internet access for STAC and optional place search
+- A local FlashRank model cache when Hugging Face is blocked by a
+  corporate certificate
 
-```powershell
-git clone <YOUR_REPOSITORY_URL>
-cd GeoScope_Agent
-```
+Recommended Ollama models:
 
-### 2. Create and activate a virtual environment
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-### 4. Install and start Ollama
-
-```powershell
+```cmd
 ollama pull qwen2.5:7b-instruct
 ollama pull nomic-embed-text
 ollama pull llama3.1:8b
 ```
 
-Optional:
+## Installation
 
-```powershell
-ollama pull deepseek-r1:8b
+```cmd
+git clone <YOUR_REPOSITORY_URL>
+cd GeoScope_Agent
+
+py -3.11 -m venv .venv
+.venv\Scripts\activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-## Prepare the knowledge base
+## FlashRank model
 
-Place supported documents in `docs/raw`, or upload them from the Data Preparation page.
+The project uses:
 
-Then run ingestion and build the vector index from the Streamlit interface, or run:
-
-```powershell
-python src\ingest_documents.py
-python src\build_vector_index.py
+```text
+ms-marco-MiniLM-L-12-v2
 ```
+
+The expected local structure is:
+
+```text
+data/
+└── flashrank_cache/
+    └── ms-marco-MiniLM-L-12-v2/
+        ├── config.json
+        ├── flashrank-MiniLM-L-12-v2_Q.onnx
+        ├── special_tokens_map.json
+        ├── tokenizer_config.json
+        └── tokenizer.json
+```
+
+Do not commit the model binaries unless the course or repository policy
+explicitly allows it. A practical `.gitignore` entry is:
+
+```gitignore
+data/flashrank_cache/
+```
+
+## Provider configuration
+
+Create:
+
+```text
+.streamlit/secrets.toml
+```
+
+For Ollama:
+
+```toml
+GEOSCOPE_PROVIDER = "ollama"
+OLLAMA_GENERATION_MODEL = "qwen2.5:7b-instruct"
+OLLAMA_JUDGE_MODEL = "llama3.1:8b"
+```
+
+For optional OpenAI reviewer mode:
+
+```toml
+GEOSCOPE_PROVIDER = "openai"
+OPENAI_API_KEY = "your-key"
+OPENAI_GENERATION_MODEL = "gpt-5-mini"
+OPENAI_JUDGE_MODEL = "gpt-5-mini"
+```
+
+Never commit `secrets.toml`.
 
 ## Run the application
 
-```powershell
+Make sure Ollama is running, then:
+
+```cmd
 python -m streamlit run GeoScope.py
 ```
 
-## Evaluation dataset
+## Quick start
 
-The retrieval evaluation dataset is stored in `data/evaluation_questions.csv`.
+1. Open **Data Preparation**.
+2. Upload or confirm the PDF/HTML knowledge documents.
+3. Run ingestion and build the vector index.
+4. Open **AOI and STAC**.
+5. Draw an AOI or search `Kom Ombo, Aswan, Egypt`.
+6. Select a historical date range and search Sentinel-2.
+7. Open **Ask GeoAI**.
+8. Select the full retrieval pipeline.
+9. Ask a technical remote-sensing question.
+10. Inspect the rewritten query, vector ranks, and reranking scores.
+11. Open **Evaluation and Feedback** to compare retrieval pipelines.
+12. Open **Monitoring** to inspect runs and feedback.
 
-Each question contains a question ID, question, expected document, domain, and difficulty.
+## Automated demonstration
 
-Retrieval quality is measured using Hit Rate and Mean Reciprocal Rank.
+Open:
 
-## Monitoring and logging
+```text
+6_Automated_Demo.py
+```
 
-GeoScope stores application runs in DuckDB, including the question, answer, retrieved sources, application, crop, season, AOI summary and geometry, STAC scene count, date range, cloud-cover threshold, latency, status, and errors.
+The standard demo performs:
 
-Evaluation and feedback records can also be loaded through dlt into DuckDB.
+```text
+AOI resolution
+→ STAC search
+→ distinct-date check
+→ query rewriting
+→ vector retrieval
+→ FlashRank reranking
+→ grounded answer
+→ optional GeoTIFF
+→ monitoring log
+```
+
+For a fast recorded demo, keep GeoTIFF generation disabled. For the
+full live demo, enable it after confirming that remote raster access
+works on the current network.
+
+## Important temporal rule
+
+```text
+Number of STAC scene items ≠ number of acquisition dates
+```
+
+Several scene items can be tiles from the same day. GeoScope counts
+distinct dates and does not recommend time-series analysis unless at
+least two acquisition dates are available.
+
+## GeoTIFF workflow
+
+The current raster-processing scope is:
+
+```text
+one AOI + one STAC item + one product
+→ one clipped GeoTIFF
+```
+
+Available products:
+
+- Red
+- NIR
+- NDVI
+
+The lowest-cloud returned scene can be selected automatically in the
+demo, or a scene can be selected manually from the AOI/STAC page.
+
+## Evaluation
+
+### Retrieval
+
+- Ground-truth questions: `data/evaluation_questions.csv`
+- Metrics: Hit Rate and Mean Reciprocal Rank
+- Compared approaches: vector, rewriting, reranking, full pipeline
+
+### Generation
+
+- LLM-as-a-judge
+- relevance
+- groundedness
+- completeness
+- technical correctness
+- citation quality
+- geographic relevance
+
+### Human feedback
+
+- thumbs up/down
+- optional written comment
+- logged for monitoring
+
+## Monitoring
+
+GeoScope records application runs and feedback in DuckDB through the
+project logging layer. The Streamlit monitoring page provides metrics,
+filters, history, and export.
+
+## Corporate-network SSL limitation
+
+Some corporate networks inject a self-signed certificate into HTTPS
+connections. This can affect:
+
+- Nominatim text geocoding;
+- remote Sentinel-2 GeoTIFF access;
+- first-time FlashRank downloads.
+
+The preferred production solution is to configure the organization's
+trusted root CA. Temporary insecure SSL workarounds should remain local
+and must not be presented as a production security configuration.
 
 ## Current limitations
 
-- The MVP does not download full satellite scenes.
-- The STAC workflow currently focuses on Sentinel-2.
-- The local LLM may be slow depending on hardware.
-- Uploaded documents must be ingested and re-indexed before retrieval.
-- JavaScript-heavy HTML pages may not extract correctly.
-- GeoScope supports expert review but does not replace scientific validation.
+- no multi-tile mosaicking;
+- no cloud-mask raster workflow yet;
+- no aligned multi-date raster cube;
+- no scheduled ingestion orchestration;
+- no Postgres/Grafana deployment;
+- no Docker deployment yet;
+- automated GeoTIFF generation depends on network access;
+- query rewriting increases evaluation runtime.
 
-## Future improvements
+## Rubric self-check
 
-- OpenAI access for reviewers
-- Model-provider selector
-- Secure API-key configuration
-- Sentinel-1 STAC support
-- More AOI-aware scene-ranking logic
-- Online deployment
-- Authentication
-- Richer experiment tracking
-- More real user questions in the evaluation dataset
-- Agent and tool-trajectory evaluation
+| Criterion | Implementation |
+|---|---|
+| Problem description | `README.md`, Problem section |
+| Retrieval flow | `src/retrieval.py`, `src/query_rewrite.py`, `src/reranking.py`, `src/generation.py` |
+| Retrieval evaluation | `src/evaluation.py`, Evaluation page |
+| LLM evaluation | LLM judge plus human feedback |
+| Interface | Streamlit multipage app |
+| Ingestion pipeline | Data Preparation page and ingestion modules |
+| Monitoring | DuckDB/dlt and Streamlit monitoring dashboard |
+| Reproducibility | README, user guide, requirements, provider examples |
+| Query rewriting | `src/query_rewrite.py` |
+| Re-ranking | `src/reranking.py` |
+| Multiple retrieval approaches | Four pipelines compared using the same ground truth |
+| Domain integration | AOI, STAC, distinct dates, NDVI, GeoTIFF |
 
-## Reviewer mode
+## Security
 
-A future reviewer mode will allow users to choose between local Ollama models and OpenAI models.
+The following files and directories must remain outside Git:
 
-The API key will be provided securely through Streamlit secrets or environment variables and will never be stored in the repository.
+```gitignore
+.venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+.env
+logs/*.duckdb
+data/vector_store/
+data/flashrank_cache/
+```
 
-## Responsible use
+## Detailed usage
 
-GeoScope recommendations should be reviewed by a qualified remote-sensing or domain specialist before operational or policy use.
-
-The application is designed for research, learning, prototyping, and decision support.
-
-## Author
-
-Hanaa Hammad  
-LLM Zoomcamp Capstone Project
+See [docs/USER_GUIDE.md](documentation/USER_GUIDE.md).

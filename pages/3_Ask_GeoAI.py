@@ -18,7 +18,10 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.generation import generate_answer
 from src.monitoring import log_run
-from src.retrieval import search_documents
+from src.retrieval import (
+    APPROACH_LABELS,
+    search_documents,
+)
 
 
 st.set_page_config(
@@ -31,8 +34,8 @@ apply_global_style()
 
 st.title("🤖 Step 3 — Ask GeoAI")
 st.caption(
-    "Combine AOI context, STAC metadata, document retrieval, "
-    "and local generation."
+    "Query rewriting, semantic retrieval, FlashRank reranking, "
+    "AOI/STAC context, and grounded generation."
 )
 
 aoi_geojson = st.session_state.get("aoi_geojson")
@@ -143,7 +146,7 @@ if st.button(
 
 st.divider()
 
-left, right = st.columns([0.75, 1.25])
+left, right = st.columns([0.78, 1.22])
 
 with left:
     application = st.selectbox(
@@ -180,11 +183,33 @@ with left:
         ],
     )
 
+    approach = st.selectbox(
+        "Retrieval approach",
+        list(APPROACH_LABELS.keys()),
+        format_func=lambda key: APPROACH_LABELS[key],
+        index=3,
+        help=(
+            "The full approach rewrites the query, retrieves a wider "
+            "candidate set from Chroma, and reranks it with FlashRank."
+        ),
+    )
+
     top_k = st.slider(
-        "Retrieved document chunks",
+        "Final context chunks",
         1,
         10,
         5,
+    )
+
+    candidate_k = st.slider(
+        "Vector candidates before reranking",
+        max(top_k, 5),
+        30,
+        max(15, top_k * 3),
+        disabled=approach not in {
+            "rerank",
+            "rewrite_rerank",
+        },
     )
 
 with right:
@@ -196,11 +221,26 @@ with right:
 
 st.write(
     f"AOI available: **{'Yes' if aoi_geojson else 'No'}** · "
-    f"STAC scenes available: **{len(scenes)}**"
+    f"STAC scene items: **{len(scenes)}**"
 )
 
 if aoi_geojson:
-    st.info(f"**AOI used in this question:** {aoi_summary}")
+    st.info(f"**AOI used:** {aoi_summary}")
+
+unique_dates = sorted(
+    {
+        scene.get("date")
+        for scene in scenes
+        if scene.get("date")
+    }
+)
+
+if scenes:
+    st.write(
+        f"Distinct acquisition dates: **{len(unique_dates)}** · "
+        f"Time series possible: "
+        f"**{'Yes' if len(unique_dates) >= 2 else 'No'}**"
+    )
 
 if st.button(
     "Run GeoScope",
@@ -219,14 +259,14 @@ if st.button(
         if not question.strip():
             raise ValueError("Please enter a question.")
 
-        scene_lines = []
-
-        for scene in scenes[:5]:
-            scene_lines.append(
+        scene_lines = [
+            (
                 f"- {scene.get('item_id')} | "
                 f"date={scene.get('date')} | "
                 f"cloud_cover={scene.get('cloud_cover')}"
             )
+            for scene in scenes[:5]
+        ]
 
         scene_summary = (
             "\n".join(scene_lines)
@@ -244,18 +284,33 @@ Selected filters:
 - Season: {season}
 - AOI supplied: {"yes" if aoi_geojson else "no"}
 - AOI description: {aoi_summary}
+- STAC scene items: {len(scenes)}
+- Distinct acquisition dates: {len(unique_dates)}
+- Distinct dates: {", ".join(unique_dates) if unique_dates else "None"}
+- Time-series analysis possible: {"yes" if len(unique_dates) >= 2 else "no"}
 
 Available Sentinel-2 scenes:
 {scene_summary}
 """.strip()
 
-        with st.spinner("Retrieving relevant knowledge..."):
+        with st.spinner(
+            "Rewriting, retrieving, and reranking knowledge..."
+        ):
             sources = search_documents(
                 augmented_question,
                 top_k=top_k,
+                approach=approach,
+                candidate_k=(
+                    candidate_k
+                    if approach in {
+                        "rerank",
+                        "rewrite_rerank",
+                    }
+                    else None
+                ),
             )
 
-        with st.spinner("Generating the answer locally..."):
+        with st.spinner("Generating the grounded answer..."):
             answer = generate_answer(
                 question=augmented_question,
                 retrieved_chunks=sources,
@@ -291,8 +346,14 @@ Available Sentinel-2 scenes:
     if status == "success":
         st.session_state["last_run_id"] = run_id
         st.session_state["last_question"] = question
+        st.session_state["last_augmented_question"] = (
+            augmented_question
+        )
         st.session_state["last_answer"] = answer
         st.session_state["last_sources"] = sources
+        st.session_state["last_retrieval_approach"] = (
+            approach
+        )
 
         st.subheader("Answer")
         st.markdown(answer)
@@ -301,17 +362,50 @@ Available Sentinel-2 scenes:
             f"Latency: {latency:.2f} seconds"
         )
 
-        st.subheader("Retrieved sources")
+        if sources:
+            original_query = sources[0].get(
+                "original_query",
+                augmented_question,
+            )
+            retrieval_query = sources[0].get(
+                "retrieval_query",
+                original_query,
+            )
+
+            with st.expander(
+                "Inspect retrieval pipeline",
+                expanded=True,
+            ):
+                st.write(
+                    f"**Approach:** "
+                    f"{APPROACH_LABELS[approach]}"
+                )
+                st.write("**Original retrieval input**")
+                st.code(original_query)
+                st.write("**Query used for vector search**")
+                st.code(retrieval_query)
+
+        st.subheader("Retrieved and reranked sources")
 
         rows = [
             {
+                "final_rank": source.get("rank"),
+                "vector_rank": source.get("vector_rank"),
                 "file": source.get("file_name"),
                 "page": source.get("page_number"),
-                "distance": round(
-                    source.get("distance", 0),
+                "vector_distance": round(
+                    source.get("distance", 0.0),
                     4,
                 ),
-                "preview": source.get("text", "")[:300],
+                "rerank_score": (
+                    round(
+                        source.get("rerank_score"),
+                        4,
+                    )
+                    if source.get("rerank_score")
+                    is not None
+                    else None
+                ),
             }
             for source in sources
         ]
@@ -321,6 +415,16 @@ Available Sentinel-2 scenes:
             use_container_width=True,
             hide_index=True,
         )
+
+        for index, source in enumerate(
+            sources,
+            start=1,
+        ):
+            with st.expander(
+                f"Source {index} — "
+                f"{source.get('file_name', 'Unknown')}"
+            ):
+                st.write(source.get("text", ""))
 
     else:
         st.error(error_message)

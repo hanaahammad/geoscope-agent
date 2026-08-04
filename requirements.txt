@@ -10,13 +10,8 @@ pystac-client
 beautifulsoup4
 lxml
 chromadb
-pystac-client
 dlt[duckdb]
 openai
 rasterio
 numpy
-shapely
-requests
-pystac-client
-streamlit-folium
-folium
+flashrank
