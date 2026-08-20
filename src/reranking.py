@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+FLASHRANK_CACHE = PROJECT_ROOT / "data" / "flashrank_cache"
 
 
 @lru_cache(maxsize=1)
@@ -19,7 +23,7 @@ def _get_ranker():
 
     return Ranker(
         model_name="ms-marco-MiniLM-L-12-v2",
-        cache_dir="data/flashrank_cache",
+        cache_dir=str(FLASHRANK_CACHE),
     )
 
 

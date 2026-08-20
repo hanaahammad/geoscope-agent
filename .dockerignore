@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.streamlit/secrets.toml
+.env
+logs/*.duckdb
+data/flashrank_cache/*
+data/vector_store/*
+Hardware_sizing/
+*.zip

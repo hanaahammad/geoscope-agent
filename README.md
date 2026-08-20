@@ -46,7 +46,11 @@ GeoScope supports:
 - LLM-as-a-judge generation evaluation;
 - explicit thumbs-up/thumbs-down feedback;
 - DuckDB/dlt run logging and a Streamlit monitoring dashboard;
-- an end-to-end automated demonstration page.
+- an end-to-end automated demonstration page;
+- persistent analysis projects and workflow state;
+- AI-governance monitoring;
+- a LangChain fixed RAG pipeline vs LangGraph agentic workflow comparison;
+- Docker / Docker Compose execution.
 
 ## Architecture
 
@@ -125,7 +129,10 @@ GeoScope_Agent/
 │   ├── 3_Ask_GeoAI.py
 │   ├── 4_Evaluation_and_Feedback.py
 │   ├── 5_Monitoring.py
-│   └── 6_Automated_Demo.py
+│   ├── 6_Automated_Demo.py
+│   ├── 7_Projects_and_Workflows.py
+│   ├── 8_Cloud_Deployment_Test.py
+│   └── 9_Pipeline_vs_Agentic.py
 ├── src/
 │   ├── ingest_documents.py
 │   ├── build_vector_index.py
@@ -141,6 +148,9 @@ GeoScope_Agent/
 │   ├── monitoring.py
 │   ├── dlt_logging.py
 │   ├── demo_runner.py
+│   ├── workflow_store.py
+│   ├── langchain_pipeline.py
+│   ├── agentic_geoscope.py
 │   └── ui.py
 ├── data/
 │   ├── vector_store/
@@ -364,7 +374,6 @@ and must not be presented as a production security configuration.
 - no aligned multi-date raster cube;
 - no scheduled ingestion orchestration;
 - no Postgres/Grafana deployment;
-- no Docker deployment yet;
 - automated GeoTIFF generation depends on network access;
 - query rewriting increases evaluation runtime.
 
@@ -403,3 +412,94 @@ data/flashrank_cache/
 ## Detailed usage
 
 See [docs/USER_GUIDE.md](documentation/USER_GUIDE.md).
+
+
+## Standard pipeline vs Agentic AI
+
+GeoScope deliberately implements both patterns rather than making every
+request agentic.
+
+```text
+Standard LangChain pipeline
+Question
+  → rewrite
+  → vector candidates
+  → FlashRank rerank
+  → grounded generation
+
+Agentic LangGraph workflow
+Question
+  → LLM planner
+  → choose bounded tool
+  → observe result
+  → plan again
+  → grounded final answer
+```
+
+The standard pipeline is preferred when the required processing path is known.
+It is predictable, inexpensive, and straightforward to evaluate. The agentic
+workflow is useful when the next step depends on current state—for example,
+whether an AOI exists, whether STAC scenes have already been found, or whether
+knowledge still needs to be retrieved.
+
+The agent is intentionally bounded. The LLM selects among approved actions,
+while deterministic Python tools perform STAC search, retrieval, reranking and
+answer generation. This makes the agentic workflow easier to inspect, evaluate,
+and govern.
+
+Open **9 — Pipeline vs Agentic** to execute both implementations and compare
+their traces.
+
+## Containerized execution
+
+GeoScope itself runs in Docker. Ollama can remain on the host machine so that
+large model files are not baked into the application image.
+
+Before starting the container, make sure Ollama is running on the host and that
+the required models are available:
+
+```cmd
+ollama pull qwen2.5:7b-instruct
+ollama pull nomic-embed-text
+ollama pull llama3.1:8b
+```
+
+Then run:
+
+```cmd
+docker compose up --build
+```
+
+Open:
+
+```text
+http://localhost:8501
+```
+
+Docker Compose configures GeoScope to reach host Ollama through:
+
+```text
+http://host.docker.internal:11434
+```
+
+The `data/` and `logs/` directories are mounted into the container so Chroma,
+workflow state, FlashRank cache, and monitoring outputs can persist across
+container restarts.
+
+If the Chroma index does not exist yet, use **Data Preparation** after startup
+to ingest the knowledge documents and build it. If the local FlashRank cache is
+present under `data/flashrank_cache/`, the mounted volume makes it available to
+the container; otherwise FlashRank may download the model on first use.
+
+## Deployment boundary
+
+```text
+Local / Docker execution
+GeoScope container → Ollama on host
+
+Cloud UI option
+Streamlit Community Cloud → Ollama Cloud API
+```
+
+The application is therefore containerized independently from the model
+runtime. This keeps the image small and makes the inference provider replaceable.

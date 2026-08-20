@@ -12,3 +12,5 @@ data/vector_store/
 
 .vscode/
 .idea/
+data/flashrank_cache/
+data/geoscope_workflows.duckdb

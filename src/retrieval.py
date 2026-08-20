@@ -6,6 +6,7 @@ from typing import Any, Literal
 import chromadb
 import requests
 
+from src.llm_provider import get_ollama_base_url, get_setting
 from src.query_rewrite import rewrite_query
 from src.reranking import rerank_documents
 
@@ -13,8 +14,7 @@ from src.reranking import rerank_documents
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VECTOR_DB_DIR = PROJECT_ROOT / "data" / "vector_store"
 
-OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
-EMBEDDING_MODEL = "nomic-embed-text:latest"
+DEFAULT_EMBEDDING_MODEL = "nomic-embed-text:latest"
 COLLECTION_NAME = "geoscope_documents"
 
 RetrievalApproach = Literal[
@@ -36,9 +36,12 @@ APPROACH_LABELS = {
 
 def embed_query(query: str) -> list[float]:
     response = requests.post(
-        OLLAMA_EMBED_URL,
+        f"{get_ollama_base_url()}/api/embed",
         json={
-            "model": EMBEDDING_MODEL,
+            "model": get_setting(
+                "OLLAMA_EMBEDDING_MODEL",
+                DEFAULT_EMBEDDING_MODEL,
+            ),
             "input": query,
         },
         timeout=120,

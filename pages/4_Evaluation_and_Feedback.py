@@ -18,7 +18,6 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.dlt_logging import (
     log_generation_evaluation,
     log_retrieval_evaluation,
-    log_user_feedback,
 )
 from src.evaluation import (
     active_judge_configuration,
@@ -376,37 +375,11 @@ with generation_tab:
             )
 
     st.divider()
-    st.subheader("User feedback")
-
-    rating = st.radio(
-        "Was this answer useful?",
-        ["👍 Yes", "👎 No"],
-        horizontal=True,
+    st.info(
+        "Human 👍/👎 feedback is collected directly in Step 3 — Ask GeoAI. "
+        "This page is reserved for structured retrieval evaluation and "
+        "LLM-as-a-judge generation evaluation."
     )
-
-    comment = st.text_area(
-        "Optional comment",
-        placeholder=(
-            "What was useful or what "
-            "should be improved?"
-        ),
-    )
-
-    if st.button("Save feedback"):
-        log_user_feedback(
-            {
-                "run_id": run_id,
-                "feedback_timestamp": (
-                    datetime.now(
-                        timezone.utc
-                    ).isoformat()
-                ),
-                "rating": rating,
-                "comment": comment,
-                "question": question,
-            }
-        )
-        st.success("Feedback saved through dlt.")
 
 with examples_tab:
     st.markdown(

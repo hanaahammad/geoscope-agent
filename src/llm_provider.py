@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-OLLAMA_GENERATE_URL = "http://localhost:11434/api/generate"
+DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_MODEL = "qwen2.5:7b-instruct"
 DEFAULT_OPENAI_MODEL = "gpt-5-mini"
 
@@ -27,6 +27,14 @@ def get_provider() -> str:
     return provider
 
 
+def get_ollama_base_url() -> str:
+    """Return the Ollama server URL for local or container execution."""
+    return get_setting(
+        "OLLAMA_BASE_URL",
+        DEFAULT_OLLAMA_BASE_URL,
+    ).rstrip("/")
+
+
 def get_generation_model() -> str:
     if get_provider() == "openai":
         return get_setting("OPENAI_GENERATION_MODEL", DEFAULT_OPENAI_MODEL)
@@ -39,14 +47,22 @@ def get_judge_model() -> str:
     return get_setting("OLLAMA_JUDGE_MODEL", "llama3.1:8b")
 
 
-def generate_text(*, instructions: str, prompt: str, model: str | None = None, json_output: bool = False) -> str:
+def generate_text(
+    *,
+    instructions: str,
+    prompt: str,
+    model: str | None = None,
+    json_output: bool = False,
+) -> str:
     provider = get_provider()
 
     if provider == "openai":
         from openai import OpenAI
         api_key = get_setting("OPENAI_API_KEY")
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY is not configured. See OPENAI_REVIEWER_SETUP.md.")
+            raise RuntimeError(
+                "OPENAI_API_KEY is not configured."
+            )
         client = OpenAI(api_key=api_key)
         response = client.responses.create(
             model=model or get_generation_model(),
@@ -58,13 +74,20 @@ def generate_text(*, instructions: str, prompt: str, model: str | None = None, j
 
     payload: dict[str, Any] = {
         "model": model or get_generation_model(),
-        "prompt": f"INSTRUCTIONS:\n{instructions}\n\nUSER REQUEST:\n{prompt}",
+        "prompt": (
+            f"INSTRUCTIONS:\n{instructions}\n\n"
+            f"USER REQUEST:\n{prompt}"
+        ),
         "stream": False,
         "options": {"temperature": 0 if json_output else 0.1},
     }
     if json_output:
         payload["format"] = "json"
 
-    response = requests.post(OLLAMA_GENERATE_URL, json=payload, timeout=300)
+    response = requests.post(
+        f"{get_ollama_base_url()}/api/generate",
+        json=payload,
+        timeout=300,
+    )
     response.raise_for_status()
     return response.json().get("response", "")
