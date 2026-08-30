@@ -153,69 +153,49 @@ Docker containerization;
 
 an isolated Ollama Cloud deployment test page.
 
-4. Architecture
+4. Understanding the Application
 
-PDF / HTML knowledge documents
-        │
-        ▼
-Document ingestion
-extract → clean → chunk → embed
-        │
-        ▼
-Chroma vector store
-        │
-        │
-User question
-        │
-        ▼
-Query rewriting
-        │
-        ▼
-Vector candidate retrieval
-        │
-        ▼
-FlashRank reranking
-        │
-        ▼
-Top evidence chunks ─────────────────────────────┐
-                                                 │
-AOI drawn / searched                             │
-        │                                        │
-        ▼                                        │
-Sentinel-2 STAC search                           │
-date + cloud filters                             │
-        │                                        │
-        ▼                                        │
-Scene count + distinct-date validation ──────────┤
-                                                 ▼
-                                      Ollama / optional OpenAI
-                                                 │
-                                                 ▼
-                                      Grounded GeoAI answer
-                                                 │
-                     ┌───────────────────────────┼──────────────────────┐
-                     ▼                           ▼                      ▼
-               Human feedback            LLM-as-a-judge       Summarize / translate
-                     │                           │
-                     └──────────────┬────────────┘
-                                    ▼
-                           DuckDB / dlt logging
-                                    │
-                         Monitoring + governance
+GeoScope is designed as an interactive Earth Observation workflow rather than a standalone chatbot. The application connects technical knowledge, geographic context, live Sentinel-2 catalogue search, AI-assisted retrieval, geospatial processing, evaluation, governance, and persistent analysis workflows.
 
-AOI + selected STAC scene
-        │
-        ▼
-Red / NIR / NDVI processing
-        │
-        ▼
-Clipped downloadable GeoTIFF
+### 4.1 Earth Observation context
 
-Persistent analysis state
-        │
-        ▼
+The image below illustrates the kind of real-world Earth Observation context GeoScope is designed to support: agricultural areas, water bodies, desert environments, and spatially explicit analysis in Egypt.
+
+![Earth Observation context in Egypt](documentation/images/earth_observation_context_egypt.jpeg)
+
+### 4.2 Application workflow
+
+```text
+Data Preparation
+      ↓
+AOI & STAC
+      ↓
+Ask GeoAI
+      ↓
+Evaluation & Feedback
+      ↓
+Monitoring & AI Governance
+      ↓
 Projects & Workflows
-save → resume → complete → archive
+      ↓
+Pipeline vs Agentic
+```
+
+### 4.3 Application pages
+
+| Page | Purpose |
+|---|---|
+| **1 — Data Preparation** | Ingest PDF/HTML knowledge, clean and chunk text, create embeddings, and build the Chroma vector index. |
+| **2 — AOI & STAC** | Define an Area of Interest, search live Sentinel-2 scenes, inspect distinct acquisition dates, and optionally generate GeoTIFF outputs. |
+| **3 — Ask GeoAI** | Ask Earth Observation questions, select the retrieval strategy, inspect evidence and rankings, generate a grounded answer, provide feedback, and optionally summarize or translate the answer. |
+| **4 — Evaluation & Feedback** | Compare retrieval approaches using Hit Rate and MRR and evaluate generated answers with an LLM-as-a-judge. |
+| **5 — Monitoring** | Review run history, quality signals, feedback, traceability, and AI-governance indicators. |
+| **6 — Automated Demo** | Run a prepared end-to-end GeoScope workflow for demonstration and peer review. |
+| **7 — Projects & Workflows** | Save, resume, complete, and archive persistent GeoScope analysis projects. |
+| **8 — Cloud Deployment Test** | Test Ollama Cloud as an optional remote inference provider for a remotely deployed Streamlit application. |
+| **9 — Pipeline vs Agentic** | Compare a fixed LangChain RAG pipeline with a bounded LangGraph agentic workflow and understand when each is appropriate. |
+
+The application is organized as a workflow rather than as a single chat screen. A researcher can move from knowledge preparation and geographic context to grounded AI assistance, evaluation, governance, and persistent project state.
 
 5. Retrieval approaches
 
