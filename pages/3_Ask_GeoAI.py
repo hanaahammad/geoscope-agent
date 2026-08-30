@@ -25,6 +25,11 @@ from src.retrieval import (
     APPROACH_LABELS,
     search_documents,
 )
+from src.reranking import (
+    FLASHRANK_MODEL_NAME,
+    check_flashrank_ready,
+    flashrank_local_cache_available,
+)
 
 
 
@@ -350,6 +355,20 @@ with left:
         },
     )
 
+    if approach in {"rerank", "rewrite_rerank"}:
+        if flashrank_local_cache_available():
+            st.caption(
+                f"✅ FlashRank local cache detected: `{FLASHRANK_MODEL_NAME}`"
+            )
+        else:
+            st.warning(
+                "⚠️ FlashRank local model cache was not detected. "
+                "GeoScope will try to initialize the reranker when you run "
+                "the query. If the model cannot be downloaded in this "
+                "environment, the run will stop cleanly and you can select "
+                "**Vector search** or **Query rewriting + vector search**."
+            )
+
 with right:
     question = st.text_area(
         "Question",
@@ -397,6 +416,21 @@ if st.button(
     try:
         if not question.strip():
             raise ValueError("Please enter a question.")
+
+        if approach in {"rerank", "rewrite_rerank"}:
+            with st.spinner("Checking FlashRank reranker..."):
+                flashrank_ready, flashrank_message = (
+                    check_flashrank_ready()
+                )
+
+            if not flashrank_ready:
+                raise RuntimeError(
+                    "FlashRank reranking is unavailable for this run. "
+                    "Please select **Vector search** or "
+                    "**Query rewriting + vector search**, or install/cache "
+                    f"`{FLASHRANK_MODEL_NAME}` and retry.\n\n"
+                    f"{flashrank_message}"
+                )
 
         scene_lines = [
             (
