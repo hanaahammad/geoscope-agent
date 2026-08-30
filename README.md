@@ -1,169 +1,82 @@
-GeoScope Agent
+# GeoScope Agent
 
-GeoScope Agent is an AI-assisted Earth Observation application designed to help researchers and analysts understand how Generative AI can support practical remote-sensing workflows.
+> **GeoScope helps Earth Observation researchers understand how AI can support their workflows — without replacing domain expertise.**
 
-The project combines technical-document retrieval, geographic context, live Sentinel-2 catalogue search, raster processing, evaluation, human feedback, monitoring, AI governance, persistent analysis workflows, and a comparison between fixed and agentic orchestration.
+GeoScope Agent is an **AI-assisted Earth Observation application** developed as a capstone project for the **LLM Zoomcamp**.
 
-GeoScope was developed as a capstone project for the LLM Zoomcamp.
-
-Note to Reviewer
-
-GeoScope is implemented as a Streamlit application rather than a notebook so the complete AI-assisted Earth Observation workflow can be reviewed interactively.
-
-Recommended review path:
-
-AOI & STAC
-→ Ask GeoAI
-→ Evaluation
-→ Monitoring / AI Governance
-→ Projects & Workflows
-→ Pipeline vs Agentic
-
-GeoScope uses Ollama locally by default:
-
-Role
-
-Model
-
-Generation
-
-qwen2.5:7b-instruct
-
-Query rewriting
-
-qwen2.5:7b-instruct
-
-Embeddings
-
-nomic-embed-text
-
-LLM-as-a-judge
-
-llama3.1:8b
-
-For a quick review, use a prepared AOI/demo scenario and select Rewrite + Rerank in Ask GeoAI. Inspect the rewritten query, ranking changes, retrieved evidence, and grounded answer; then review human feedback, LLM-as-a-judge, Monitoring / AI Governance, persistent Projects & Workflows, and finally the fixed-vs-agentic comparison.
-
-Docker support is included for reproducibility. The Ollama Cloud page is an isolated deployment/integration test and is not required for the normal local workflow.
-
-1. Problem and project objective
-
-Earth Observation researchers often need to answer several connected questions:
-
-Which sensor or dataset is appropriate for a task?
-
-Which spectral bands or indices are relevant?
-
-Are suitable scenes available for a selected location and period?
-
-Do several returned scene items represent several dates, or only several tiles from one acquisition date?
-
-Can a recommendation be translated into an executable raster product?
-
-How can AI help without hiding the evidence or replacing domain expertise?
-
-A conventional chatbot can answer a technical question without checking the real geographic context or the actual satellite catalogue.
-
-GeoScope connects:
-
-technical knowledge
-+ AOI
-+ live STAC catalogue
-+ retrieval and reranking
-+ LLM generation
-+ geospatial processing
-+ evaluation and governance
-
-The objective is not to replace remote-sensing expertise. GeoScope demonstrates how AI can assist researchers with knowledge retrieval, imagery discovery, grounded recommendations, simple raster processing, evaluation, and traceable analytical workflows.
-
-2. Why Streamlit instead of notebooks?
-
-GeoScope is intentionally implemented as a Streamlit application rather than a collection of Jupyter notebooks.
-
-A notebook is very useful for experimentation, but GeoScope is intended to demonstrate an end-to-end AI-assisted workflow that a researcher can use interactively without executing code cell by cell.
-
-Notebook-style prototype
-→ code-centric
-→ cell-by-cell execution
-→ suited to experimentation
-
-GeoScope Streamlit application
-→ user-centric
-→ end-to-end workflow
-→ persistent state
-→ monitoring
-→ governance
-→ containerization
-→ deployment-ready architecture
-
-Using Streamlit also makes the application easier to demonstrate, evaluate, containerize, and eventually deploy.
-
-3. What GeoScope does
-
-GeoScope currently supports:
-
-PDF and HTML document ingestion;
-
-text extraction, cleaning, chunking, and embeddings;
-
-persistent Chroma vector storage;
-
-semantic vector retrieval;
-
-LLM-based query rewriting;
-
-FlashRank reranking;
-
-comparison of four retrieval approaches;
-
-local Ollama generation and judging;
-
-optional OpenAI reviewer mode;
-
-AOI drawing on an interactive map;
-
-AOI search by place name;
-
-live Sentinel-2 STAC search by AOI, date, and cloud cover;
-
-distinct acquisition-date validation;
-
-Red, NIR, and NDVI GeoTIFF generation;
-
-retrieval evaluation with Hit Rate and MRR;
-
-LLM-as-a-judge generation evaluation;
-
-human thumbs-up / thumbs-down feedback and comments;
-
-answer summarization and translation without rerunning retrieval;
-
-DuckDB/dlt logging;
-
-Streamlit monitoring and AI-governance metrics;
-
-persistent projects that can be saved, resumed, completed, and archived;
-
-a LangChain fixed-pipeline implementation;
-
-a bounded LangGraph agentic workflow;
-
-a side-by-side fixed-vs-agentic comparison;
-
-Docker containerization;
-
-an isolated Ollama Cloud deployment test page.
-
-4. Understanding the Application
-
-GeoScope is designed as an interactive Earth Observation workflow rather than a standalone chatbot. The application connects technical knowledge, geographic context, live Sentinel-2 catalogue search, AI-assisted retrieval, geospatial processing, evaluation, governance, and persistent analysis workflows.
-
-### 4.1 Earth Observation context
-
-The image below illustrates the kind of real-world Earth Observation context GeoScope is designed to support: agricultural areas, water bodies, desert environments, and spatially explicit analysis in Egypt.
+It combines technical-document retrieval, geographic context, live Sentinel-2 catalogue search, raster processing, evaluation, human feedback, monitoring, AI governance, persistent analysis workflows, and a comparison between fixed and agentic orchestration.
 
 ![Earth Observation context in Egypt](documentation/images/earth_observation_context_egypt.jpeg)
 
-### 4.2 Application workflow
+---
+
+## 👀 Note to Reviewer
+
+GeoScope is implemented as a **Streamlit application rather than a notebook** so the complete workflow can be reviewed interactively.
+
+### Recommended review path
+
+**AOI & STAC** → **Ask GeoAI** → **Evaluation** → **Monitoring / AI Governance** → **Projects & Workflows** → **Pipeline vs Agentic**
+
+For a quick review:
+
+1. Start Ollama and the required models.
+2. Define or load an AOI.
+3. Search Sentinel-2 scenes.
+4. Open **Ask GeoAI** and select **Rewrite + Rerank**.
+5. Inspect the rewritten query, ranking changes, retrieved evidence, and grounded answer.
+6. Give human feedback.
+7. Review **LLM-as-a-judge** and **AI Governance**.
+8. Open **Pipeline vs Agentic** and compare both orchestration patterns.
+
+> **Docker support is included for reproducibility.**  
+> The **Ollama Cloud** page is an isolated deployment/integration test and is **not required** for the normal local workflow.
+
+---
+
+## 🎯 1. Project Objective
+
+Earth Observation researchers often need to answer several connected questions:
+
+- Which **sensor or dataset** is appropriate for a task?
+- Which **spectral bands or indices** are relevant?
+- Are suitable scenes available for a selected **location and period**?
+- Do several STAC items represent **different dates**, or only several tiles from the same date?
+- Can a recommendation be translated into an executable **raster product**?
+- How can AI help without hiding the evidence or replacing domain expertise?
+
+A conventional chatbot may answer a technical question without checking the real geographic context or the actual satellite catalogue.
+
+GeoScope connects:
+
+**Technical knowledge + AOI + live STAC catalogue + retrieval + LLM generation + geospatial processing + evaluation + governance**
+
+The objective is **not to replace remote-sensing expertise**. GeoScope demonstrates how AI can assist with knowledge retrieval, imagery discovery, grounded recommendations, simple raster processing, evaluation, and traceable analytical workflows.
+
+---
+
+## 🖥️ 2. Why Streamlit Instead of Notebooks?
+
+GeoScope is intentionally implemented as a **multipage Streamlit application** rather than a collection of Jupyter notebooks.
+
+| Notebook-style prototype | GeoScope Streamlit application |
+|---|---|
+| Code-centric | User-centric |
+| Cell-by-cell execution | End-to-end workflow |
+| Excellent for experimentation | Better for demonstration and evaluation |
+| Temporary notebook state | Persistent workflow state |
+| Limited operational view | Monitoring and governance |
+| Harder to package | Docker-ready |
+
+This makes the project easier to **use, demonstrate, evaluate, containerize, and eventually deploy**.
+
+---
+
+## 🧭 3. Understanding the Application
+
+GeoScope is designed as an **interactive workflow**, not as a single chatbot screen.
+
+### 3.1 Main application flow
 
 ```text
 Data Preparation
@@ -181,340 +94,305 @@ Projects & Workflows
 Pipeline vs Agentic
 ```
 
-### 4.3 Application pages
+### 3.2 Application pages
 
-| Page | Purpose |
+| Page | What the user can do |
 |---|---|
 | **1 — Data Preparation** | Ingest PDF/HTML knowledge, clean and chunk text, create embeddings, and build the Chroma vector index. |
-| **2 — AOI & STAC** | Define an Area of Interest, search live Sentinel-2 scenes, inspect distinct acquisition dates, and optionally generate GeoTIFF outputs. |
-| **3 — Ask GeoAI** | Ask Earth Observation questions, select the retrieval strategy, inspect evidence and rankings, generate a grounded answer, provide feedback, and optionally summarize or translate the answer. |
-| **4 — Evaluation & Feedback** | Compare retrieval approaches using Hit Rate and MRR and evaluate generated answers with an LLM-as-a-judge. |
-| **5 — Monitoring** | Review run history, quality signals, feedback, traceability, and AI-governance indicators. |
-| **6 — Automated Demo** | Run a prepared end-to-end GeoScope workflow for demonstration and peer review. |
-| **7 — Projects & Workflows** | Save, resume, complete, and archive persistent GeoScope analysis projects. |
-| **8 — Cloud Deployment Test** | Test Ollama Cloud as an optional remote inference provider for a remotely deployed Streamlit application. |
-| **9 — Pipeline vs Agentic** | Compare a fixed LangChain RAG pipeline with a bounded LangGraph agentic workflow and understand when each is appropriate. |
+| **2 — AOI & STAC** | Define an AOI, search live Sentinel-2 scenes, inspect distinct acquisition dates, and generate GeoTIFF outputs. |
+| **3 — Ask GeoAI** | Ask EO questions, choose a retrieval strategy, inspect evidence/ranks, generate a grounded answer, give feedback, summarize, or translate. |
+| **4 — Evaluation & Feedback** | Compare retrieval strategies with Hit Rate/MRR and evaluate generated answers with an LLM-as-a-judge. |
+| **5 — Monitoring** | Review runs, quality signals, feedback, traceability, and AI-governance indicators. |
+| **6 — Automated Demo** | Run a prepared end-to-end scenario for demonstration. |
+| **7 — Projects & Workflows** | Save, resume, complete, and archive persistent GeoScope projects. |
+| **8 — Cloud Deployment Test** | Test Ollama Cloud as an optional remote inference provider. |
+| **9 — Pipeline vs Agentic** | Compare a fixed LangChain pipeline with a bounded LangGraph agentic workflow. |
 
-The application is organized as a workflow rather than as a single chat screen. A researcher can move from knowledge preparation and geographic context to grounded AI assistance, evaluation, governance, and persistent project state.
+---
 
-5. Retrieval approaches
+## 🏗️ 4. Architecture
 
-GeoScope implements four real retrieval pipelines:
+GitHub renders the following Mermaid diagram directly in the README:
 
-Approach
+```mermaid
+flowchart TD
+    A[PDF / HTML Knowledge] --> B[Extract / Clean / Chunk]
+    B --> C[Embeddings]
+    C --> D[(Chroma Vector Store)]
 
-Flow
+    Q[User Question] --> R[Query Rewriting]
+    R --> D
+    D --> V[Vector Candidates]
+    V --> F[FlashRank Reranking]
+    F --> G[Top Evidence]
 
-Purpose
+    AOI[AOI] --> STAC[Sentinel-2 STAC Search]
+    STAC --> DATE[Scene Count + Distinct-Date Check]
 
-Vector
+    G --> LLM[Ollama / Optional OpenAI]
+    DATE --> LLM
+    LLM --> ANSWER[Grounded GeoAI Answer]
 
-Original query → Chroma
+    ANSWER --> FB[Human Feedback]
+    ANSWER --> JUDGE[LLM-as-a-Judge]
+    ANSWER --> TRANS[Summarize / Translate]
 
-Semantic baseline
+    FB --> LOG[(DuckDB / dlt)]
+    JUDGE --> LOG
+    LOG --> MON[Monitoring + AI Governance]
 
-Rewrite
+    STAC --> RASTER[Red / NIR / NDVI]
+    RASTER --> TIFF[Clipped GeoTIFF]
 
-Rewritten query → Chroma
+    STATE[Persistent Analysis State] --> WF[Projects & Workflows]
+    WF --> STATE
+```
 
-Improve retrieval wording
+### Main technology components
 
-Rerank
+- **Streamlit** — user interface
+- **Chroma** — vector store
+- **Ollama** — local LLM inference and embeddings
+- **FlashRank** — reranking
+- **Earth Search STAC** — live Sentinel-2 catalogue
+- **Rasterio** — GeoTIFF processing
+- **DuckDB + dlt** — logging, monitoring, evaluation history
+- **LangChain** — fixed pipeline orchestration
+- **LangGraph** — bounded agentic orchestration
 
-Original query → Chroma candidates → FlashRank
+---
 
-Improve candidate ordering
+## 🔎 5. Retrieval Approaches
 
-Rewrite + Rerank
+GeoScope implements **four real retrieval pipelines**.
 
-Rewrite → Chroma candidates → FlashRank
+| Approach | Flow | Purpose |
+|---|---|---|
+| **Vector** | Original query → Chroma | Semantic baseline |
+| **Rewrite** | Rewritten query → Chroma | Improve retrieval wording |
+| **Rerank** | Original query → Chroma candidates → FlashRank | Improve candidate ordering |
+| **Rewrite + Rerank** | Rewrite → Chroma candidates → FlashRank | Full advanced retrieval pipeline |
 
-Full advanced retrieval pipeline
+### What the user can inspect
 
-The Ask GeoAI page exposes the retrieval process so the user can inspect:
+The **Ask GeoAI** page exposes:
 
-original retrieval input;
+- **Original retrieval input**
+- **Rewritten query**
+- **Vector rank**
+- **Final rank**
+- **Vector distance**
+- **FlashRank score**
+- **Retrieved source text**
 
-rewritten query;
+This supports **transparency and explainability**: the user can inspect how evidence was selected before the LLM generates the answer.
 
-vector rank;
+---
 
-final rank;
+## 🌍 6. Earth Observation Integration
 
-vector distance;
+### 6.1 AOI and Sentinel-2 STAC search
 
-FlashRank score;
+The user can:
 
-source text.
+- draw an **Area of Interest (AOI)** on the map;
+- search by place name;
+- select a date range;
+- filter by cloud cover;
+- query live Sentinel-2 Level-2A scenes.
 
-This supports transparency and explainability: the user can inspect how evidence was selected before the LLM produced an answer.
+### 6.2 Important temporal guardrail
 
-6. Fixed pipeline vs Agentic AI
+> **STAC scene items ≠ distinct acquisition dates**
 
-GeoScope deliberately demonstrates that not every task requires Agentic AI.
+Several scene items may represent different tiles from the **same day**.
 
-Fixed LangChain pipeline
+GeoScope therefore counts **distinct acquisition dates** before recommending time-series analysis.
 
-Question
-→ Rewrite
-→ Retrieve
-→ Rerank
-→ Build context
-→ Generate grounded answer
+### 6.3 GeoTIFF processing
 
-The application defines the sequence. It is predictable, reproducible, and easy to evaluate.
+A **GeoTIFF** is a raster image that stores both pixel values and geographic reference information.
 
-Agentic LangGraph workflow
+GeoScope can export a selected Sentinel-2 scene as:
 
-Question
-→ Planner
-→ Choose bounded tool
-→ Observe tool result
-→ Planner
-→ Choose next action
-→ Final answer
+- **Red**
+- **NIR**
+- **NDVI**
 
-The planner can select among bounded actions such as:
+Workflow:
 
-inspect current geographic context;
+**Selected STAC scene** → **Choose Red/NIR/NDVI** → **Clip to AOI** → **Generate GeoTIFF** → **Open in QGIS/ArcGIS**
 
-search STAC;
+**Current scope:** one AOI + one selected scene + one product → one clipped GeoTIFF.
 
-retrieve technical knowledge;
+> GeoScope does not yet implement a complete production remote-sensing chain such as multi-tile mosaicking, full cloud masking, or aligned multi-date raster cubes.
 
-produce the final answer.
+---
 
-The underlying STAC, retrieval, reranking, and generation functions remain explicit tools. The agent decides which action is needed next rather than replacing the validated operations.
+## 🤖 7. Models Used
 
-Example question types:
+GeoScope uses **Ollama locally by default**.
 
-Question type
+| Role | Model |
+|---|---|
+| **Generation** | `qwen2.5:7b-instruct` |
+| **Query rewriting** | `qwen2.5:7b-instruct` |
+| **Embeddings** | `nomic-embed-text` |
+| **LLM-as-a-judge** | `llama3.1:8b` |
 
-Recommended approach
+The separation is intentional:
 
-“What is NDVI?”
+- the **generation model** produces user-facing answers;
+- the **embedding model** powers semantic retrieval;
+- the **judge model** evaluates generated answers independently.
 
-Fixed pipeline
+---
 
-Technical knowledge synthesis
+## 📊 8. Evaluation and Human Feedback
 
-Usually fixed pipeline
+### 8.1 Retrieval evaluation
 
-Check current AOI and imagery availability before recommending an analysis
+Ground-truth questions:
 
-Agentic workflow can add value
+`data/evaluation_questions.csv`
 
-Decide whether the current context supports time-series analysis
+Metrics:
 
-Agentic workflow can inspect state and choose tools
+- **Hit Rate**
+- **Mean Reciprocal Rank (MRR)**
 
-7. GeoTIFF processing
+The same ground truth is evaluated across all four retrieval approaches.
 
-What is a GeoTIFF?
+### 8.2 LLM-as-a-judge
 
-A GeoTIFF is a raster image that contains pixel values and geographic reference information, including the coordinate system and spatial extent.
+Generation evaluation includes:
 
-In GeoScope, a selected Sentinel-2 scene can be clipped to the current AOI and exported as:
+- **Relevance**
+- **Groundedness**
+- **Completeness**
+- **Technical correctness**
+- **Citation quality**
+- **Geographic relevance**
+- **Overall assessment**
 
-Red;
+### 8.3 Human feedback
 
-NIR;
+Human feedback is collected directly in **Ask GeoAI**:
 
-NDVI.
+- 👍 **Yes**
+- 👎 **No**
+- optional written comment
 
-STAC scene
-   ↓
-Select Red / NIR / NDVI
-   ↓
-Clip to AOI
-   ↓
-Generate GeoTIFF
-   ↓
-Open in GIS / download
+Feedback and evaluation records are persisted and surfaced in Monitoring.
 
-The file can later be opened in software such as QGIS or ArcGIS and remains correctly positioned geographically.
+---
 
-Current scope:
+## 🛡️ 9. Monitoring and AI Governance
 
-one AOI + one selected STAC scene + one product
-→ one clipped GeoTIFF
+GeoScope treats governance as part of the **operational workflow**, not as a separate policy document.
 
-GeoScope does not yet implement a complete production remote-sensing chain such as multi-tile mosaicking, cloud masking, or aligned multi-date raster cubes.
+| Governance dimension | How GeoScope addresses it |
+|---|---|
+| **Groundedness** | RAG evidence + groundedness evaluation |
+| **Explainability** | Visible query rewrite, ranks, reranking scores, and sources |
+| **Transparency** | Provider, model, retrieval strategy, context, and limitations are visible |
+| **Human oversight** | Feedback and validation at the point of use |
+| **Reliability / quality** | Retrieval metrics + LLM-as-a-judge |
+| **Traceability / auditability** | DuckDB/dlt logs + persistent workflow history |
+| **Responsible use** | Evidence-backed answers, geographic context, temporal checks, and human validation |
 
-8. AI Governance
+GeoScope primarily uses **public Earth Observation and technical data** and does not perform individual profiling or demographic decision-making.
 
-GeoScope treats AI governance as part of the operational lifecycle rather than as a policy statement.
+The main risks are instead:
 
-Governance dimension
+- unsupported geospatial conclusions;
+- misleading temporal interpretation;
+- overconfidence;
+- hallucinated technical claims;
+- missing evidence.
 
-Applicability
+---
 
-GeoScope implementation
-
-Groundedness
-
-High
-
-RAG evidence + groundedness evaluation
-
-Explainability
-
-High
-
-Visible query rewrite, ranks, reranking scores, sources
-
-Transparency
-
-High
-
-Provider/model/retrieval strategy and limitations are visible
-
-Human oversight
-
-High
-
-👍 / 👎 feedback and comments at the point of use
-
-Reliability / quality
-
-High
-
-Retrieval metrics + LLM-as-a-judge
-
-Traceability / auditability
-
-High
-
-DuckDB/dlt logs + persistent workflow history
-
-Ethical / responsible use
-
-Context-specific
-
-Public Earth-observation data; safeguards focus on avoiding unsupported geospatial conclusions
-
-GeoScope does not perform individual profiling or demographic decision-making. Therefore, demographic fairness metrics are not the primary concern for this use case.
-
-Responsible-use controls focus on:
-
-public Earth-observation and technical sources;
-
-evidence-backed answers;
-
-explicit geographic context;
-
-human validation;
-
-source inspection;
-
-temporal consistency checks;
-
-traceable runs and workflow state.
-
-An important domain guardrail is:
-
-Number of STAC scene items ≠ number of acquisition dates
-
-Several items can be tiles from the same day. GeoScope counts distinct acquisition dates and does not treat multiple same-date tiles as a time series.
-
-9. Evaluation and feedback
-
-Retrieval evaluation
-
-ground-truth questions: data/evaluation_questions.csv;
-
-metrics: Hit Rate and Mean Reciprocal Rank (MRR);
-
-same ground truth evaluated across the four retrieval approaches.
-
-Generation evaluation
-
-GeoScope uses an independent LLM-as-a-judge to score:
-
-relevance;
-
-groundedness;
-
-completeness;
-
-technical correctness;
-
-citation quality;
-
-geographic relevance;
-
-overall result.
-
-Human feedback
-
-Human feedback is collected directly on Ask GeoAI:
-
-👍 Yes;
-
-👎 No;
-
-optional comment.
-
-The feedback and evaluation records are persisted through the dlt/DuckDB logging layer and surfaced in Monitoring.
-
-10. Answer summarization and translation
+## ✍️ 10. Summarize and Translate
 
 After a grounded answer is generated, the user can optionally:
 
-summarize it;
+- **Summarize**
+- **Translate**
+- **Summarize + Translate**
 
-translate it;
+Supported UI choices currently include:
 
-summarize and translate it.
+**English · French · Arabic · Spanish · German**
 
-Supported UI choices currently include English, French, Arabic, Spanish, and German.
+This is **post-processing of the existing grounded answer**. Retrieval is **not rerun**, and the original answer remains visible.
 
-This is post-processing of the already grounded answer:
+---
 
-Grounded answer
-→ optional summarize / translate
+## 📂 11. Persistent Projects and Workflows
 
-Retrieval is not rerun and the original long answer remains visible.
-
-The transformation prompt is instructed to preserve Earth Observation terminology, dataset names, band names, indices, numerical values, limitations, and source references.
-
-11. Persistent Projects and Workflows
-
-GeoScope analyses can be stored as persistent workflow instances using DuckDB.
+GeoScope can persist analytical workflow state in DuckDB.
 
 Example:
 
-Project: Kom Ombo Wheat Monitoring 2026
+| Step | Example status |
+|---|---|
+| AOI defined | ✅ Completed |
+| STAC search | ✅ Completed |
+| Knowledge retrieval | ✅ Completed |
+| GeoAI recommendation | ✅ Completed |
+| GeoTIFF processing | ▶ In progress |
+| Evaluation | ○ Pending |
+| Completion | ○ Pending |
 
-1. AOI defined                  ✓
-2. STAC search                  ✓
-3. Knowledge retrieval          ✓
-4. GeoAI recommendation         ✓
-5. GeoTIFF processing           ▶
-6. Evaluation                   ○
-7. Completion                   ○
+Projects can be:
 
-The project can be:
+- **Created**
+- **Saved**
+- **Resumed**
+- **Completed**
+- **Archived**
 
-created;
+Persisted state can include AOI, dates, STAC results, questions, retrieval strategy, sources, answers, GeoTIFF metadata, evaluation, artifacts, and event history.
 
-saved;
+> This makes GeoScope a **stateful analytical assistant**, not only a stateless chatbot.
 
-resumed later;
+---
 
-completed;
+## 🔀 12. Fixed Pipeline vs Agentic AI
 
-archived.
+### Fixed LangChain pipeline
 
-Persisted state can include AOI, dates, STAC results, question, retrieval strategy, sources, answer, GeoTIFF metadata, evaluation, artifacts, and event history.
+**Question** → **Rewrite** → **Retrieve** → **Rerank** → **Build context** → **Generate**
 
-This makes GeoScope a stateful analytical assistant, not only a stateless chatbot.
+Use this when the required steps are **known and repeatable**.
 
-12. Project structure
+### Agentic LangGraph workflow
 
+**Question** → **Planner** → **Choose bounded tool** → **Observe** → **Planner** → **Next action** → **Answer**
+
+The planner can choose among bounded actions such as:
+
+- inspect current geographic context;
+- search STAC;
+- retrieve technical knowledge;
+- generate the final answer.
+
+> **Key takeaway:** Not every use case requires Agentic AI.  
+> Use the simplest orchestration pattern that solves the task.
+
+---
+
+## 🗂️ 13. Project Structure
+
+Rather than displaying the whole repository as one long line, the main structure is grouped by purpose:
+
+```text
 GeoScope_Agent/
-├── GeoScope.py
-├── pages/
+│
+├── GeoScope.py                         # Streamlit entry point
+│
+├── pages/                              # Application pages
 │   ├── 1_Data_Preparation.py
 │   ├── 2_AOI_and_STAC.py
 │   ├── 3_Ask_GeoAI.py
@@ -524,7 +402,8 @@ GeoScope_Agent/
 │   ├── 7_Projects_and_Workflows.py
 │   ├── 8_Cloud_Deployment_Test.py
 │   └── 9_Pipeline_vs_Agentic.py
-├── src/
+│
+├── src/                                # Core application logic
 │   ├── ingest_documents.py
 │   ├── build_vector_index.py
 │   ├── retrieval.py
@@ -532,92 +411,47 @@ GeoScope_Agent/
 │   ├── reranking.py
 │   ├── generation.py
 │   ├── llm_provider.py
-│   ├── geocoding.py
 │   ├── stac_search.py
 │   ├── geotiff_processing.py
 │   ├── evaluation.py
 │   ├── monitoring.py
 │   ├── dlt_logging.py
-│   ├── demo_runner.py
 │   ├── workflow_store.py
 │   ├── langchain_pipeline.py
-│   ├── agentic_geoscope.py
-│   └── ui.py
+│   └── agentic_geoscope.py
+│
 ├── data/
 │   ├── evaluation_questions.csv
 │   └── demo/
+│
 ├── documentation/
-│   └── USER_GUIDE.md
+│   ├── USER_GUIDE.md
+│   └── images/
+│       └── earth_observation_context_egypt.jpeg
+│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .dockerignore
 ├── requirements.txt
 └── README.md
+```
 
-Runtime files such as Chroma indexes, workflow DuckDB files, logs, secrets, and the FlashRank cache should not be committed.
+Runtime files such as Chroma indexes, workflow DuckDB files, logs, secrets, and the FlashRank model cache should **not** be committed.
 
-13. Prerequisites
+---
 
-Recommended local setup:
+## ⚙️ 14. Local Installation
 
-Python 3.11;
+### 14.1 Prerequisites
 
-Ollama installed and running;
+- **Python 3.11**
+- **Ollama**
+- Internet access for Earth Search STAC and optional Nominatim place search
+- FlashRank model available locally or downloadable
 
-internet access for Earth Search STAC and optional Nominatim place search;
+### 14.2 Clone and create the environment
 
-FlashRank reranking model available locally or downloadable from the configured source.
-
-14. Ollama local setup
-
-GeoScope uses Ollama local by default for private and offline-friendly LLM inference.
-
-Install Ollama, then pull the models:
-
-ollama pull qwen2.5:7b-instruct
-ollama pull nomic-embed-text
-ollama pull llama3.1:8b
-
-Model roles:
-
-Role
-
-Model
-
-Main generation
-
-qwen2.5:7b-instruct
-
-Query rewriting
-
-qwen2.5:7b-instruct
-
-Embeddings
-
-nomic-embed-text
-
-LLM-as-a-judge
-
-llama3.1:8b
-
-The separation is intentional:
-
-the generation model produces the user-facing answer;
-
-the embedding model powers semantic search;
-
-the judge model evaluates answers independently.
-
-If Ollama is not already running:
-
-ollama serve
-
-Default local endpoint:
-
-http://localhost:11434
-
-15. Local installation
-
+```cmd
 git clone <YOUR_REPOSITORY_URL>
 cd GeoScope_Agent
 
@@ -626,252 +460,160 @@ py -3.11 -m venv .venv
 
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+```
+
+### 14.3 Install Ollama models
+
+```cmd
+ollama pull qwen2.5:7b-instruct
+ollama pull nomic-embed-text
+ollama pull llama3.1:8b
+```
+
+Start Ollama if necessary:
+
+```cmd
+ollama serve
+```
+
+Default endpoint:
+
+```text
+http://localhost:11434
+```
+
+### 14.4 Streamlit configuration
 
 Create:
 
+```text
 .streamlit/secrets.toml
+```
 
-Example local configuration:
+Example:
 
+```toml
 GEOSCOPE_PROVIDER = "ollama"
 OLLAMA_GENERATION_MODEL = "qwen2.5:7b-instruct"
 OLLAMA_JUDGE_MODEL = "llama3.1:8b"
+```
 
-Never commit secrets.toml.
+> **Never commit `secrets.toml`.**
 
-Then run:
+### 14.5 Run GeoScope
 
+```cmd
 python -m streamlit run GeoScope.py
+```
 
 Open:
 
-http://localhost:8501
+`http://localhost:8501`
 
-16. FlashRank model
+---
+
+## 🧮 15. FlashRank Model
 
 GeoScope uses:
 
-ms-marco-MiniLM-L-12-v2
+`ms-marco-MiniLM-L-12-v2`
 
-The local cache is intentionally excluded from Git.
+The local model cache is intentionally excluded from Git:
 
-Typical local structure:
-
-data/
-└── flashrank_cache/
-    └── ms-marco-MiniLM-L-12-v2/
-        ├── config.json
-        ├── flashrank-MiniLM-L-12-v2_Q.onnx
-        ├── special_tokens_map.json
-        ├── tokenizer_config.json
-        └── tokenizer.json
-
-Recommended .gitignore entry:
-
+```gitignore
 data/flashrank_cache/
+```
 
-17. Docker
+---
+
+## 🐳 16. Docker
 
 GeoScope is containerized.
 
-The application container does not need to contain the Ollama models. On Windows with Docker Desktop, GeoScope can call Ollama running on the host through:
+The application container does **not** need to contain the Ollama models.
 
-http://host.docker.internal:11434
+On Windows with Docker Desktop, the container can call Ollama running on the host through:
 
-Typical startup:
+`http://host.docker.internal:11434`
 
+Start:
+
+```cmd
 docker compose up --build
+```
 
-Then open:
+Open:
 
-http://localhost:8501
+`http://localhost:8501`
 
-For active development, running Streamlit directly is faster. Docker is mainly used to verify reproducibility and deployment packaging.
+For active development, running Streamlit directly is faster. Docker is mainly used to validate **reproducibility and packaging**.
 
-18. Ollama Cloud / Streamlit Community Cloud
+---
 
-Page 8 — Cloud Deployment Test is intentionally isolated from the current local runtime.
+## ☁️ 17. Ollama Cloud / Streamlit Community Cloud
 
-It demonstrates the deployment pattern:
-
-GeoScope application
-→ deployed on Streamlit Community Cloud
-
-Remote inference
-→ Ollama Cloud API
+Page **8 — Cloud Deployment Test** is intentionally isolated from the normal local runtime.
 
 Correct terminology:
 
-GeoScope is deployed on Streamlit Community Cloud and uses Ollama Cloud for remote model inference.
-
-The page tests:
-
-API authentication;
-
-cloud model discovery;
-
-generation;
-
-query rewriting / judge suitability;
-
-embeddings;
-
-compatibility considerations with the existing Chroma index.
-
-The cloud test is optional and does not replace the default local Ollama workflow.
-
-19. Quick start for reviewers
-
-Recommended demo path:
-
-Start Ollama and the required models.
-
-Run python -m streamlit run GeoScope.py.
-
-Open Data Preparation and confirm/build the knowledge index.
-
-Open AOI and STAC.
-
-Draw an AOI or search for a place such as Kom Ombo, Aswan, Egypt.
-
-Select a date range and cloud threshold.
-
-Search Sentinel-2 scenes and inspect distinct dates.
-
-Optionally generate Red, NIR, or NDVI GeoTIFF.
-
-Open Ask GeoAI.
-
-Select Rewrite + Rerank.
-
-Ask a technical EO question.
-
-Inspect query rewriting, ranks, reranking score, evidence, and answer.
-
-Give human feedback.
-
-Optionally summarize or translate the answer.
-
-Open Evaluation and Feedback and run retrieval / LLM-as-a-judge evaluation.
-
-Open Monitoring → AI Governance.
-
-Open Projects and Workflows to save/resume an analysis.
-
-Open Pipeline vs Agentic and compare both orchestration styles on the same question.
-
-For a shorter guided flow, use Automated Demo.
-
-20. Corporate-network SSL limitation
-
-Some corporate networks inject a self-signed certificate into HTTPS connections. This can affect:
-
-Nominatim geocoding;
-
-remote Sentinel-2 GeoTIFF access;
-
-first-time model downloads.
-
-The preferred production solution is to configure the organization's trusted root CA.
-
-Temporary insecure SSL workarounds should remain local and must not be presented as a production security configuration.
-
-21. Current limitations
-
-no multi-tile mosaicking;
-
-no full cloud-mask raster workflow;
-
-no aligned multi-date raster cube;
-
-no scheduled ingestion orchestration;
-
-automated raster access depends on network connectivity;
-
-query rewriting and reranking increase evaluation runtime;
-
-Ollama Cloud page is a deployment/integration test, not the default runtime;
-
-the agent is deliberately bounded and is not intended as a fully autonomous Earth Observation system.
-
-22. Rubric self-check
-
-Criterion
-
-GeoScope implementation
-
-Dataset / source
-
-Technical documents + live Earth Search STAC
-
-Ingestion / API
-
-PDF/HTML ingestion + STAC API
-
-Application flow
-
-Retrieval → context → prompt → LLM + geospatial tools
-
-Retrieval evaluation
-
-Hit Rate + MRR
-
-LLM evaluation
-
-LLM-as-a-judge
-
-Human feedback
-
-👍 / 👎 + comments
-
-Interface
-
-Streamlit multipage application
-
-Monitoring
-
-DuckDB/dlt + Streamlit dashboard
-
-Advanced retrieval
-
-Query rewriting + FlashRank reranking
-
-Multiple retrieval approaches
-
-Four pipelines
-
-Geospatial processing
-
-AOI + STAC + NDVI + GeoTIFF
-
-Persistence
-
-Projects & Workflows
-
-AI governance
-
-Explainability, transparency, oversight, traceability, quality
-
-Agentic AI
-
-Bounded LangGraph workflow
-
-Framework orchestration
-
-LangChain fixed pipeline
-
-Containerization
-
-Docker + Docker Compose
-
-Reproducibility
-
-README + user guide + requirements + configuration instructions
-
-23. Security and Git hygiene
-
-Keep these outside Git:
-
+> **GeoScope is deployed on Streamlit Community Cloud and uses Ollama Cloud for remote model inference.**
+
+The page can test:
+
+- API authentication;
+- cloud model discovery;
+- generation;
+- query-rewrite / judge suitability;
+- embeddings;
+- vector-index compatibility considerations.
+
+This is an **optional deployment test**, not the default GeoScope runtime.
+
+---
+
+## 🚀 18. Quick Start for Reviewers
+
+1. Start Ollama and the required models.
+2. Run `python -m streamlit run GeoScope.py`.
+3. Open **Data Preparation** and confirm/build the knowledge index.
+4. Open **AOI & STAC**.
+5. Draw an AOI or search `Kom Ombo, Aswan, Egypt`.
+6. Select a historical date range and cloud threshold.
+7. Search Sentinel-2 and inspect **distinct acquisition dates**.
+8. Optionally generate **Red, NIR, or NDVI GeoTIFF**.
+9. Open **Ask GeoAI**.
+10. Select **Rewrite + Rerank**.
+11. Ask a technical EO question.
+12. Inspect the rewritten query, ranks, reranking score, evidence, and answer.
+13. Give human feedback.
+14. Optionally summarize or translate.
+15. Open **Evaluation & Feedback**.
+16. Open **Monitoring → AI Governance**.
+17. Open **Projects & Workflows**.
+18. Open **Pipeline vs Agentic** and compare both approaches.
+
+For a shorter path, use **Automated Demo**.
+
+---
+
+## ⚠️ 19. Current Limitations
+
+- No multi-tile mosaicking
+- No full cloud-mask raster workflow
+- No aligned multi-date raster cube
+- No scheduled ingestion orchestration
+- Automated raster access depends on network connectivity
+- Query rewriting and reranking increase evaluation runtime
+- Ollama Cloud page is a deployment/integration test, not the default runtime
+- The agent is deliberately bounded and is not a fully autonomous EO system
+
+---
+
+## 🔐 20. Security and Git Hygiene
+
+Keep the following outside Git:
+
+```gitignore
 .venv/
 __pycache__/
 *.pyc
@@ -881,9 +623,36 @@ logs/*.duckdb
 data/vector_store/
 data/flashrank_cache/
 data/geoscope_workflows.duckdb
+```
 
-24. Detailed usage
+---
 
-See the full guide:
+## ✅ 21. Rubric Coverage
 
-documentation/USER_GUIDE.md
+| Criterion | GeoScope implementation |
+|---|---|
+| **Dataset / source** | Technical documents + live Earth Search STAC |
+| **Ingestion / API** | PDF/HTML ingestion + STAC API |
+| **Application flow** | Retrieval → context → prompt → LLM + geospatial tools |
+| **Retrieval evaluation** | Hit Rate + MRR |
+| **LLM evaluation** | LLM-as-a-judge |
+| **Human feedback** | 👍 / 👎 + comments |
+| **Interface** | Streamlit multipage application |
+| **Monitoring** | DuckDB/dlt + Streamlit dashboard |
+| **Advanced retrieval** | Query rewriting + FlashRank reranking |
+| **Multiple retrieval approaches** | Four pipelines |
+| **Geospatial processing** | AOI + STAC + NDVI + GeoTIFF |
+| **Persistence** | Projects & Workflows |
+| **AI governance** | Explainability, transparency, oversight, traceability, quality |
+| **Agentic AI** | Bounded LangGraph workflow |
+| **Framework orchestration** | LangChain fixed pipeline |
+| **Containerization** | Docker + Docker Compose |
+| **Reproducibility** | README + User Guide + requirements + configuration |
+
+---
+
+## 📖 22. Detailed User Guide
+
+For the full page-by-page instructions, see:
+
+**[documentation/USER_GUIDE.md](documentation/USER_GUIDE.md)**
