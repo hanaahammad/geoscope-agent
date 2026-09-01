@@ -16,3 +16,4 @@ rasterio
 numpy
 flashrank
 langchain-core
+matplotlib

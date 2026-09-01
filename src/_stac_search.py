@@ -7,42 +7,10 @@ from pystac_client import Client
 
 
 EARTH_SEARCH_URL = "https://earth-search.aws.element84.com/v1"
-
-# Keep the collection already used successfully by the current GeoScope project.
 DEFAULT_COLLECTION = "sentinel-2-c1-l2a"
-
-DATASET_CONFIG: dict[str, dict[str, Any]] = {
-    "Sentinel-2 Level-2A": {
-        "collection": DEFAULT_COLLECTION,
-        "cloud_filter": True,
-        "description": (
-            "Optical multispectral imagery for vegetation, agriculture, "
-            "water, land-cover, and urban mapping."
-        ),
-    },
-    "Landsat Collection 2 Level-2": {
-        "collection": "landsat-c2-l2",
-        "cloud_filter": True,
-        "description": (
-            "Optical and thermal imagery. Appropriate for long historical "
-            "analysis and Land Surface Temperature / urban heat workflows."
-        ),
-    },
-    "Sentinel-1 GRD": {
-        "collection": "sentinel-1",
-        "cloud_filter": False,
-        "description": (
-            "Radar imagery. Particularly useful for flood mapping and "
-            "cloudy conditions."
-        ),
-    },
-}
 
 
 def _asset_metadata(asset: Any) -> dict[str, Any]:
-    """
-    Preserve the complete asset metadata used by GeoTIFF processing.
-    """
     extra = asset.extra_fields or {}
     eo_bands = extra.get("eo:bands", [])
     raster_bands = extra.get("raster:bands", [])
@@ -58,8 +26,7 @@ def _asset_metadata(asset: Any) -> dict[str, Any]:
     }
 
 
-def search_dataset(
-    dataset_name: str,
+def search_sentinel2(
     aoi_geometry: dict[str, Any],
     start_date: str,
     end_date: str,
@@ -67,17 +34,8 @@ def search_dataset(
     limit: int = 10,
 ) -> list[dict[str, Any]]:
     """
-    Generic Earth Search STAC search used by Page 7.
-
-    It supports several EO collections while returning the same scene structure
-    already expected by the existing GeoScope code.
+    Search Sentinel-2 Collection 1 Level-2A scenes intersecting an AOI.
     """
-    if dataset_name not in DATASET_CONFIG:
-        raise ValueError(
-            f"Unsupported dataset: {dataset_name}. "
-            f"Available datasets: {', '.join(DATASET_CONFIG)}"
-        )
-
     if not aoi_geometry:
         raise ValueError("An AOI geometry is required.")
 
@@ -89,25 +47,19 @@ def search_dataset(
             "The start date must be before or equal to the end date."
         )
 
-    config = DATASET_CONFIG[dataset_name]
     catalog = Client.open(EARTH_SEARCH_URL)
 
-    search_kwargs: dict[str, Any] = {
-        "collections": [config["collection"]],
-        "intersects": aoi_geometry,
-        "datetime": f"{start.isoformat()}/{end.isoformat()}",
-        "max_items": int(limit),
-    }
-
-    # Sentinel-1 radar is not filtered by optical cloud-cover metadata.
-    if config["cloud_filter"]:
-        search_kwargs["query"] = {
+    search = catalog.search(
+        collections=[DEFAULT_COLLECTION],
+        intersects=aoi_geometry,
+        datetime=f"{start.isoformat()}/{end.isoformat()}",
+        query={
             "eo:cloud_cover": {
                 "lte": float(max_cloud_cover)
             }
-        }
-
-    search = catalog.search(**search_kwargs)
+        },
+        max_items=int(limit),
+    )
 
     results: list[dict[str, Any]] = []
 
@@ -126,14 +78,11 @@ def search_dataset(
         cloud_cover = item.properties.get("eo:cloud_cover")
 
         if (
-            config["cloud_filter"]
-            and cloud_cover is not None
+            cloud_cover is not None
             and float(cloud_cover) > float(max_cloud_cover)
         ):
             continue
 
-        # IMPORTANT: keep detailed asset metadata.
-        # src/geotiff_processing.py depends on this.
         assets = {
             name: _asset_metadata(asset)
             for name, asset in item.assets.items()
@@ -145,7 +94,6 @@ def search_dataset(
             "thumbnail",
             "rendered_preview",
             "visual",
-            "preview",
         ):
             if asset_name in assets:
                 thumbnail = assets[asset_name]["href"]
@@ -157,7 +105,6 @@ def search_dataset(
                 "date": item_date,
                 "cloud_cover": cloud_cover,
                 "collection": item.collection_id,
-                "dataset_name": dataset_name,
                 "bbox": item.bbox,
                 "geometry": item.geometry,
                 "thumbnail": thumbnail,
@@ -166,8 +113,6 @@ def search_dataset(
             }
         )
 
-    # For optical datasets put lower-cloud scenes first.
-    # Radar has no meaningful optical cloud-cover value.
     results.sort(
         key=lambda item: (
             item.get("cloud_cover")
@@ -180,37 +125,12 @@ def search_dataset(
     return results[: int(limit)]
 
 
-def search_sentinel2(
-    aoi_geometry: dict[str, Any],
-    start_date: str,
-    end_date: str,
-    max_cloud_cover: float = 20,
-    limit: int = 10,
-) -> list[dict[str, Any]]:
-    """
-    Backward-compatible Sentinel-2 function.
-
-    Page 2 can continue importing and using search_sentinel2 exactly as before.
-    """
-    return search_dataset(
-        dataset_name="Sentinel-2 Level-2A",
-        aoi_geometry=aoi_geometry,
-        start_date=start_date,
-        end_date=end_date,
-        max_cloud_cover=max_cloud_cover,
-        limit=limit,
-    )
-
-
 def find_band_asset(
     scene: dict[str, Any],
     common_name: str,
 ) -> tuple[str, dict[str, Any]]:
     """
-    Find a STAC asset by EO common name.
-
-    This function is retained for backward compatibility with
-    src/geotiff_processing.py and the existing Sentinel-2 GeoTIFF workflow.
+    Find a STAC asset by EO common name, with common key fallbacks.
     """
     assets = scene.get("assets", {})
     common_name = common_name.lower()

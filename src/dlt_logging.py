@@ -11,6 +11,13 @@ DUCKDB_PATH = PROJECT_ROOT / "logs" / "geoscope_monitoring.duckdb"
 
 
 def _pipeline():
+    """
+    dlt pipeline used for evaluation and human-feedback event logging.
+
+    The main execution/run record is stored in logs/runs.duckdb by
+    src.monitoring.log_run(). dlt is used here for append-oriented structured
+    events whose schemas can evolve independently.
+    """
     DUCKDB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     return dlt.pipeline(
@@ -38,6 +45,9 @@ def log_retrieval_evaluation(
 def log_generation_evaluation(
     record: dict[str, Any],
 ) -> None:
+    if not record:
+        return
+
     _pipeline().run(
         [record],
         table_name="generation_evaluations",
@@ -48,6 +58,9 @@ def log_generation_evaluation(
 def log_user_feedback(
     record: dict[str, Any],
 ) -> None:
+    if not record:
+        return
+
     _pipeline().run(
         [record],
         table_name="user_feedback",

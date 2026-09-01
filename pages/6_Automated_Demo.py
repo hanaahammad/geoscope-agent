@@ -19,6 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.demo_runner import DemoConfig, run_automated_demo
+from src.llm_provider import get_generation_model
 from src.retrieval import APPROACH_LABELS
 
 
@@ -57,48 +58,86 @@ the network is stable, because the raster step downloads remote data.
 def _try_log_demo(
     result: dict,
     elapsed: float,
-) -> tuple[bool, str]:
-    """
-    Log the demo through the current monitoring module without assuming
-    a fixed log_run signature.
-    """
+) -> tuple[bool, str, str]:
+    """Log the automated demo with the richer Page 5 observability schema."""
     try:
         from src.monitoring import log_run
     except Exception as exc:
-        return False, f"Monitoring import unavailable: {exc}"
+        return False, f"Monitoring import unavailable: {exc}", ""
+
+    run_id = str(uuid.uuid4())
+    sources = result.get("sources", [])
+
+    context_text = "\n\n".join(
+        str(source.get("text", ""))
+        for source in sources
+        if source.get("text")
+    )
+    context_characters = len(context_text)
+    estimated_context_tokens = (
+        max(1, round(context_characters / 4))
+        if context_characters
+        else 0
+    )
+
+    config = result.get("config", {})
+    retrieval_approach = config.get("retrieval_approach", "")
+    original_query = result.get("question", "")
+    rewritten_query = result.get("rewritten_query", "")
 
     values = {
-        "run_id": str(uuid.uuid4()),
-        "question": result["question"],
+        "run_id": run_id,
+        "question": original_query,
         "answer": result.get("answer", ""),
-        "sources": result.get("sources", []),
+        "sources": sources,
         "latency_seconds": elapsed,
         "status": "success",
         "error_message": "",
+
         "application": "Automated GeoScope demo",
         "crop": "Wheat",
         "season": "Winter",
         "aoi_summary": result.get("aoi_label", ""),
         "aoi_geojson": result.get("aoi_geojson"),
         "stac_scene_count": result.get("scene_count", 0),
-        "start_date": result["config"]["start_date"],
-        "end_date": result["config"]["end_date"],
-        "max_cloud_cover": result["config"]["max_cloud_cover"],
+        "start_date": config.get("start_date", ""),
+        "end_date": config.get("end_date", ""),
+        "max_cloud_cover": config.get("max_cloud_cover"),
+
+        "framework": "Application RAG",
+        "execution_mode": "Automated fixed RAG demo",
+        "model": get_generation_model(),
+        "prompt_id": "automated_demo_grounded_rag",
+        "prompt_version": "1.0",
+
+        "retrieval_approach": retrieval_approach,
+        "original_query": original_query,
+        "rewritten_query": (
+            rewritten_query
+            if rewritten_query and rewritten_query != original_query
+            else ""
+        ),
+        "top_k": config.get("top_k"),
+        "candidate_k": (
+            config.get("candidate_k")
+            if retrieval_approach in {"rerank", "rewrite_rerank"}
+            else None
+        ),
+        "chunk_count": len(sources),
+        "context_characters": context_characters,
+        "estimated_context_tokens": estimated_context_tokens,
+
+        "trace": result.get("steps", []),
+        "step_count": len(result.get("steps", [])),
     }
 
     try:
-        accepted = inspect.signature(
-            log_run
-        ).parameters
-        filtered = {
-            key: value
-            for key, value in values.items()
-            if key in accepted
-        }
+        accepted = inspect.signature(log_run).parameters
+        filtered = {k: v for k, v in values.items() if k in accepted}
         log_run(**filtered)
-        return True, "Run written to the GeoScope monitoring store."
+        return True, "Run written to the GeoScope monitoring store.", run_id
     except Exception as exc:
-        return False, f"Demo completed, but monitoring logging failed: {exc}"
+        return False, f"Demo completed, but monitoring logging failed: {exc}", run_id
 
 
 with st.expander(
@@ -219,6 +258,21 @@ with c3:
         not in {"rerank", "rewrite_rerank"},
     )
 
+st.info(
+    """
+**What happens during this automated demo?**
+
+GeoScope executes the workflow visibly, step by step:
+
+**AOI → STAC search → temporal validation → query rewriting → retrieval →
+reranking → grounded generation → optional GeoTIFF → monitoring log**
+
+This page uses the **Application RAG** workflow. It is deterministic application
+code, not LangChain or LangGraph. Page 9 is where those framework
+implementations are compared explicitly.
+"""
+)
+
 generate_geotiff = st.checkbox(
     "Include real GeoTIFF generation",
     value=False,
@@ -254,33 +308,118 @@ if st.button(
         use_text_geocoding=use_text_geocoding,
     )
 
-    progress = st.progress(0)
-    status_box = st.empty()
-    messages: list[dict[str, str]] = []
+    st.markdown("### ▶ Live execution")
+
+    total_steps = 7
+    step_order = {
+        "AOI": 1,
+        "AOI warning": 1,
+        "STAC": 2,
+        "Retrieval": 4,
+        "Generation": 5,
+        "GeoTIFF": 6,
+        "Completed": 7,
+    }
 
     progress_values = {
-        "AOI": 10,
+        "AOI": 12,
         "AOI warning": 15,
         "STAC": 30,
-        "Retrieval": 55,
-        "Generation": 75,
-        "GeoTIFF": 88,
+        "Retrieval": 58,
+        "Generation": 78,
+        "GeoTIFF": 90,
         "Completed": 100,
     }
 
+    step_titles = {
+        "AOI": "Resolve Area of Interest",
+        "AOI warning": "Resolve Area of Interest",
+        "STAC": "Search satellite catalogue",
+        "Retrieval": "Retrieve and rerank knowledge",
+        "Generation": "Generate grounded answer",
+        "GeoTIFF": "Generate optional GeoTIFF",
+        "Completed": "Log and complete run",
+    }
+
+    step_explanations = {
+        "AOI": (
+            "GeoScope resolves the study area. If text geocoding is unavailable, "
+            "the bundled Kom Ombo fallback AOI is used."
+        ),
+        "AOI warning": (
+            "The preferred AOI path was unavailable, so GeoScope uses the safe "
+            "fallback instead of stopping the demonstration."
+        ),
+        "STAC": (
+            "GeoScope queries the satellite catalogue and checks distinct "
+            "acquisition dates. Several scene items do not necessarily mean "
+            "several dates."
+        ),
+        "Retrieval": (
+            "GeoScope prepares the question for retrieval. Depending on the "
+            "selected pipeline, it may rewrite the query, retrieve Chroma "
+            "candidates and rerank them with FlashRank."
+        ),
+        "Generation": (
+            "The strongest evidence chunks are assembled into context and passed "
+            "to the generation model to produce a grounded answer."
+        ),
+        "GeoTIFF": (
+            "GeoScope attempts the optional raster-processing step. This stage "
+            "depends on remote raster access and network conditions."
+        ),
+        "Completed": (
+            "Execution metadata, prompt version, retrieval configuration, "
+            "context size, latency and the actual demo steps are logged for "
+            "Page 5 Monitoring."
+        ),
+    }
+
+    # Visible placeholders are created before execution starts so the user
+    # immediately sees that the run has begun.
+    counter_box = st.empty()
+    progress = st.progress(0)
+    status_box = st.empty()
+    narrative_box = st.container()
+    messages: list[dict[str, str]] = []
+
+    counter_box.markdown(
+        f"### Step 1/{total_steps} — Starting GeoScope demo..."
+    )
+    status_box.info(
+        "Initializing the automated workflow and preparing the configured AOI, "
+        "dates and retrieval settings."
+    )
+    progress.progress(3)
+
     def update_progress(step: str, message: str) -> None:
-        messages.append(
-            {
-                "step": step,
-                "message": message,
-            }
+        messages.append({"step": step, "message": message})
+
+        current_step = step_order.get(step, 1)
+        title = step_titles.get(step, step)
+
+        counter_box.markdown(
+            f"### Step {current_step}/{total_steps} — {title}"
         )
-        progress.progress(
-            progress_values.get(step, 5)
+        progress.progress(progress_values.get(step, 5))
+
+        explanation = step_explanations.get(
+            step,
+            "GeoScope is executing the next workflow stage.",
         )
+
         status_box.info(
-            f"**{step}:** {message}"
+            f"**{message}**\n\n{explanation}"
         )
+
+        with narrative_box:
+            st.markdown(
+                f"**Step {current_step}/{total_steps} · {title}**  \n"
+                f"{message}  \n"
+                f"<span style='color:#667085'>{explanation}</span>",
+                unsafe_allow_html=True,
+            )
+
 
     started = time.perf_counter()
 
@@ -292,7 +431,18 @@ if st.button(
         )
         elapsed = time.perf_counter() - started
 
-        logged, log_message = _try_log_demo(
+        # The demo runner does not always emit a separate callback for every
+        # conceptual step, so complete the visible counter here.
+        counter_box.markdown(
+            f"### Step 7/{total_steps} — Log and complete run"
+        )
+        progress.progress(96)
+        status_box.info(
+            "The AI workflow is complete. GeoScope is now writing the run "
+            "metadata to the monitoring store."
+        )
+
+        logged, log_message, run_id = _try_log_demo(
             result,
             elapsed,
         )
@@ -300,6 +450,7 @@ if st.button(
         result["elapsed_seconds"] = elapsed
         result["monitoring_logged"] = logged
         result["monitoring_message"] = log_message
+        result["run_id"] = run_id
         result["progress_messages"] = messages
         result["completed_at"] = datetime.now(
             timezone.utc
@@ -331,9 +482,27 @@ if st.button(
         st.session_state["last_sources"] = result[
             "sources"
         ]
+        st.session_state["last_run_id"] = run_id
+        st.session_state["last_retrieval_approach"] = retrieval_approach
+        st.session_state["last_prompt_id"] = "automated_demo_grounded_rag"
+        st.session_state["last_prompt_version"] = "1.0"
+        st.session_state["last_framework"] = "Application RAG"
+        st.session_state["last_execution_mode"] = "Automated fixed RAG demo"
+        st.session_state["last_model"] = get_generation_model()
+        st.session_state["last_top_k"] = top_k
+        st.session_state["last_candidate_k"] = (
+            candidate_k
+            if retrieval_approach in {"rerank", "rewrite_rerank"}
+            else None
+        )
 
+        counter_box.markdown(
+            f"### Step 7/{total_steps} — Complete ✅"
+        )
+        progress.progress(100)
         status_box.success(
-            f"Demonstration completed in {elapsed:.2f} seconds."
+            f"Demonstration completed in {elapsed:.2f} seconds. "
+            "The run is now available in Page 5 Monitoring."
         )
 
     except Exception as exc:
@@ -421,7 +590,10 @@ if result:
         hide_index=True,
     )
 
-    st.info(result["monitoring_message"])
+    st.info(
+        f"{result['monitoring_message']} "
+        f"Run ID: {result.get('run_id', 'Not available')}"
+    )
 
     if result.get("geotiff_bytes"):
         summary = result["geotiff_summary"]

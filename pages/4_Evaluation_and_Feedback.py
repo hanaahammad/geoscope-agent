@@ -15,6 +15,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.workflow_store import (
+    get_project,
+    save_snapshot,
+    update_step,
+)
+
 from src.dlt_logging import (
     log_generation_evaluation,
     log_retrieval_evaluation,
@@ -28,6 +34,65 @@ from src.evaluation import (
 from src.retrieval import APPROACH_LABELS
 
 
+
+def _score(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def classify_judge_verdict(evaluation: dict) -> tuple[str, str]:
+    """
+    Convert 1–5 judge scores into an operational verdict.
+
+    PASS:
+        strong overall result and no critical groundedness problem.
+    NEEDS REVIEW:
+        usable but one or more dimensions are borderline.
+    FAIL:
+        severe overall or groundedness weakness.
+
+    This is an application rule layered on top of the raw judge scores; the
+    original scores remain visible and are never replaced.
+    """
+    overall = _score(evaluation.get("overall"))
+    groundedness = _score(evaluation.get("groundedness"))
+    technical = _score(evaluation.get("technical_correctness"))
+    relevance = _score(evaluation.get("relevance"))
+
+    if (
+        (overall is not None and overall <= 2.0)
+        or (groundedness is not None and groundedness <= 2.0)
+    ):
+        if groundedness is not None and groundedness <= 2.0:
+            return "FAIL", "Unsupported / weakly grounded answer"
+        return "FAIL", "Low overall answer quality"
+
+    borderline = [
+        ("Groundedness", groundedness),
+        ("Technical correctness", technical),
+        ("Relevance", relevance),
+    ]
+    weak_dimensions = [
+        name for name, score in borderline
+        if score is not None and score <= 3.0
+    ]
+
+    if (
+        (overall is not None and overall < 4.0)
+        or weak_dimensions
+    ):
+        category = (
+            "Borderline: " + ", ".join(weak_dimensions)
+            if weak_dimensions
+            else "Borderline overall quality"
+        )
+        return "NEEDS REVIEW", category
+
+    return "PASS", "No critical quality issue detected"
+
+
 st.set_page_config(
     page_title="Evaluation and Feedback",
     page_icon="✅",
@@ -36,20 +101,94 @@ st.set_page_config(
 
 apply_global_style()
 
+def sync_evaluation_to_active_project() -> None:
+    """
+    Immediately reflect evaluation progress in an active GeoScope project.
+
+    This avoids requiring the user to manually save Page 7 before the
+    Evaluation milestone is shown as completed.
+    """
+    project_id = st.session_state.get("active_project_id")
+    if not project_id:
+        return
+
+    project = get_project(project_id)
+    if not project:
+        return
+
+    # Keep the existing saved project snapshot and update it with the
+    # evaluation-related state currently available in Streamlit.
+    snapshot = dict(project.get("snapshot") or {})
+
+    keys_to_sync = [
+        "last_evaluation",
+        "retrieval_comparison_metrics",
+        "retrieval_comparison_details",
+        "last_run_id",
+        "last_question",
+        "last_augmented_question",
+        "last_answer",
+        "last_sources",
+        "aoi_geojson",
+        "aoi_summary",
+        "stac_scenes",
+    ]
+
+    for key in keys_to_sync:
+        if key in st.session_state:
+            value = st.session_state[key]
+
+            # Pandas DataFrames cannot be stored directly in the JSON snapshot.
+            if isinstance(value, pd.DataFrame):
+                snapshot[key] = value.to_dict(orient="records")
+            else:
+                snapshot[key] = value
+
+    snapshot["evaluation_completed"] = True
+
+    save_snapshot(project_id, snapshot)
+    update_step(
+        project_id,
+        6,
+        "COMPLETED",
+        "Evaluation completed from Page 4.",
+    )
+
+
+
 st.title("✅ Step 4 — Evaluation and Feedback")
 
 st.markdown(
     """
-GeoScope now evaluates **four real retrieval pipelines** on the same
-ground-truth questions:
+GeoScope evaluates **retrieval first** and **generation second**.
 
-1. Vector search
-2. Query rewriting + vector search
-3. Vector search + FlashRank reranking
-4. Query rewriting + vector search + FlashRank reranking
+The retrieval experiment compares four real ways of finding evidence for the
+same ground-truth questions. The generation experiment then asks an independent
+LLM judge to evaluate the answer produced from that evidence.
 
-Generation is evaluated independently with an LLM judge, while explicit
-👍/👎 feedback is stored through the existing dlt/DuckDB workflow.
+### What does *query rewriting* mean?
+
+Query rewriting happens **before vector retrieval**. The LLM does not rewrite
+the final answer. It reformulates the user's question into a search-oriented
+query that may match the indexed technical documents more effectively.
+
+```text
+Original user question
+        ↓
+Optional query rewrite
+        ↓
+Vector search in Chroma
+        ↓
+Optional FlashRank reranking
+        ↓
+Retrieved evidence
+        ↓
+Answer generation
+```
+
+A rewrite is **not automatically better**. A precise question may already be a
+good retrieval query, while a short or conversational question may benefit from
+additional technical wording. That is why GeoScope measures both alternatives.
 """
 )
 
@@ -62,6 +201,51 @@ retrieval_tab, generation_tab, examples_tab = st.tabs(
 )
 
 with retrieval_tab:
+    st.markdown("### 🔎 Retrieval experiment")
+
+    p1, p2 = st.columns(2)
+
+    with p1:
+        st.markdown("**1 · Vector**")
+        st.code("Original question → Chroma → top chunks", language=None)
+
+        st.markdown("**2 · Rewrite**")
+        st.code(
+            "Original question → LLM rewrite → Chroma → top chunks",
+            language=None,
+        )
+
+    with p2:
+        st.markdown("**3 · Rerank**")
+        st.code(
+            "Original question → Chroma candidates → FlashRank → top chunks",
+            language=None,
+        )
+
+        st.markdown("**4 · Rewrite + Rerank**")
+        st.code(
+            "Question → LLM rewrite → Chroma candidates → FlashRank → top chunks",
+            language=None,
+        )
+
+    with st.expander("💡 Example — why might a query be rewritten?"):
+        st.markdown(
+            """
+**User question**
+
+`How can I detect crop stress?`
+
+**Possible retrieval-oriented rewrite**
+
+`Earth Observation crop stress detection using Sentinel-2 vegetation and moisture indices such as NDVI and NDMI`
+
+The rewritten form is used **only to search the knowledge base**. The original
+user intent remains the basis for the final answer.
+
+The experiment tells us whether this reformulation actually helps retrieval.
+"""
+        )
+
     try:
         ground_truth = load_ground_truth()
     except Exception as exc:
@@ -124,29 +308,47 @@ with retrieval_tab:
                 == selected_difficulty
             ]
 
+        selected_count = len(filtered)
+
         st.write(
-            f"Questions selected: **{len(filtered)}**"
+            f"Questions selected: **{selected_count}**"
         )
 
         with st.expander(
             "View ground-truth questions"
         ):
-            st.dataframe(
-                filtered,
-                use_container_width=True,
-                hide_index=True,
+            if filtered.empty:
+                st.caption(
+                    "No ground-truth question matches the current Domain + "
+                    "Difficulty combination."
+                )
+            else:
+                st.dataframe(
+                    filtered,
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+        if filtered.empty:
+            st.warning(
+                "No questions match these filters. Change **Domain** or "
+                "**Difficulty** before running the comparison."
+            )
+        else:
+            st.info(
+                "The **Rewrite** and **Rewrite + Rerank** approaches call the "
+                "rewriting LLM before retrieval. On a local model this can make "
+                "the four-way comparison take several minutes."
             )
 
-        st.warning(
-            "The comparison calls the rewriting LLM for two approaches "
-            "and may take several minutes on a local machine."
-        )
-
-        if st.button(
+        run_comparison = st.button(
             "Compare all retrieval approaches",
             type="primary",
             use_container_width=True,
-        ):
+            disabled=filtered.empty,
+        )
+
+        if run_comparison:
             try:
                 with st.spinner(
                     "Evaluating vector search, rewriting, "
@@ -171,13 +373,20 @@ with retrieval_tab:
                     timezone.utc
                 ).isoformat()
 
-                records = details_df.assign(
-                    evaluation_timestamp=timestamp,
-                    top_k=top_k,
-                    candidate_k=candidate_k,
-                ).to_dict(orient="records")
+                if (
+                    isinstance(details_df, pd.DataFrame)
+                    and not details_df.empty
+                ):
+                    records = details_df.assign(
+                        evaluation_timestamp=timestamp,
+                        top_k=top_k,
+                        candidate_k=candidate_k,
+                    ).to_dict(orient="records")
 
-                log_retrieval_evaluation(records)
+                    log_retrieval_evaluation(records)
+
+                st.session_state["evaluation_completed"] = True
+                sync_evaluation_to_active_project()
 
             except Exception as exc:
                 st.error(str(exc))
@@ -189,8 +398,24 @@ with retrieval_tab:
             "retrieval_comparison_details"
         )
 
-        if isinstance(metrics_df, pd.DataFrame):
+        metrics_required = {
+            "approach_label",
+            "questions_evaluated",
+            "hit_rate",
+            "mrr",
+            "failures",
+        }
+
+        if (
+            isinstance(metrics_df, pd.DataFrame)
+            and not metrics_df.empty
+            and metrics_required.issubset(metrics_df.columns)
+        ):
             st.subheader("Approach comparison")
+            st.caption(
+                "**Hit Rate** asks whether the expected source was retrieved. "
+                "**MRR** also rewards retrieving it near the top of the ranking."
+            )
 
             display_metrics = metrics_df[
                 [
@@ -224,50 +449,114 @@ with retrieval_tab:
                 f"Hit Rate {best['hit_rate']:.3f}, "
                 f"MRR {best['mrr']:.3f}."
             )
+        elif isinstance(metrics_df, pd.DataFrame) and not metrics_df.empty:
+            st.warning(
+                "Stored retrieval metrics use an older/incompatible result "
+                "schema. Run the comparison again to refresh them."
+            )
 
-        if isinstance(details_df, pd.DataFrame):
+        details_required = {
+            "approach",
+            "hit",
+            "question_id",
+            "question",
+        }
+
+        if (
+            isinstance(details_df, pd.DataFrame)
+            and not details_df.empty
+            and details_required.issubset(details_df.columns)
+        ):
             st.subheader("Detailed results")
 
-            selected_approach = st.selectbox(
-                "Inspect one approach",
-                list(APPROACH_LABELS.keys()),
-                format_func=lambda key: (
-                    APPROACH_LABELS[key]
-                ),
-            )
-
-            inspected = details_df[
-                details_df["approach"]
-                == selected_approach
+            available_approaches = [
+                key
+                for key in APPROACH_LABELS.keys()
+                if key in set(details_df["approach"].dropna())
             ]
 
-            st.dataframe(
-                inspected,
-                use_container_width=True,
-                hide_index=True,
-            )
-
-            failures = inspected[
-                ~inspected["hit"]
-            ]
-
-            if not failures.empty:
-                st.subheader(
-                    "Questions requiring improvement"
+            if not available_approaches:
+                st.info(
+                    "No approach details are available for the current result."
                 )
+            else:
+                selected_approach = st.selectbox(
+                    "Inspect one approach",
+                    available_approaches,
+                    format_func=lambda key: (
+                        APPROACH_LABELS[key]
+                    ),
+                )
+
+                inspected = details_df[
+                    details_df["approach"]
+                    == selected_approach
+                ]
+
                 st.dataframe(
-                    failures[
-                        [
-                            "question_id",
-                            "question",
-                            "rewritten_query",
-                            "expected_document",
-                            "retrieved_documents",
-                        ]
-                    ],
+                    inspected,
                     use_container_width=True,
                     hide_index=True,
                 )
+
+                failures = inspected[
+                    ~inspected["hit"].fillna(False).astype(bool)
+                ]
+
+                if not failures.empty:
+                    st.subheader(
+                        "Questions requiring improvement"
+                    )
+                    st.caption(
+                        "These are **retrieval failures** for the selected "
+                        "approach: the expected source document was not found "
+                        "in the final retrieved set. This does not automatically "
+                        "mean the rewritten query itself is wrong."
+                    )
+
+                    preferred_columns = [
+                        "question_id",
+                        "question",
+                        "rewritten_query",
+                        "expected_document",
+                        "retrieved_documents",
+                    ]
+                    visible_columns = [
+                        col
+                        for col in preferred_columns
+                        if col in failures.columns
+                    ]
+
+                    st.dataframe(
+                        failures[visible_columns],
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+                    if "rewritten_query" in failures.columns:
+                        changed = (
+                            failures["rewritten_query"]
+                            .fillna("")
+                            .astype(str)
+                            .str.strip()
+                            != failures["question"]
+                            .fillna("")
+                            .astype(str)
+                            .str.strip()
+                        )
+
+                        st.caption(
+                            f"Query rewrite changed the wording for "
+                            f"**{int(changed.sum())} of {len(failures)}** "
+                            "failed questions in this view."
+                        )
+
+        elif isinstance(details_df, pd.DataFrame) and not details_df.empty:
+            st.warning(
+                "Stored detailed results use an older/incompatible schema "
+                "(for example, the `approach` column is missing). "
+                "Run the retrieval comparison again to refresh the session."
+            )
 
 with generation_tab:
     config = active_judge_configuration()
@@ -321,6 +610,13 @@ with generation_tab:
                     "last_evaluation"
                 ] = evaluation
 
+                judge_verdict, failure_category = (
+                    classify_judge_verdict(evaluation)
+                )
+
+                evaluation["judge_verdict"] = judge_verdict
+                evaluation["failure_category"] = failure_category
+
                 log_generation_evaluation(
                     {
                         "run_id": run_id,
@@ -338,6 +634,9 @@ with generation_tab:
                     }
                 )
 
+                st.session_state["evaluation_completed"] = True
+                sync_evaluation_to_active_project()
+
             except Exception as exc:
                 st.error(str(exc))
 
@@ -346,6 +645,23 @@ with generation_tab:
         )
 
         if evaluation:
+            judge_verdict = evaluation.get("judge_verdict")
+            failure_category = evaluation.get("failure_category")
+
+            if judge_verdict:
+                if judge_verdict == "PASS":
+                    st.success(
+                        f"Judge verdict: **PASS** · {failure_category}"
+                    )
+                elif judge_verdict == "NEEDS REVIEW":
+                    st.warning(
+                        f"Judge verdict: **NEEDS REVIEW** · {failure_category}"
+                    )
+                else:
+                    st.error(
+                        f"Judge verdict: **FAIL** · {failure_category}"
+                    )
+
             names = [
                 "relevance",
                 "groundedness",
@@ -384,9 +700,21 @@ with generation_tab:
 with examples_tab:
     st.markdown(
         """
-Use the existing `data/evaluation_questions.csv` questions for automated
-comparison. Add new rows whenever GeoScope gains another document or
-domain. Each row must identify the expected source document.
+The retrieval benchmark is based on `data/evaluation_questions.csv`.
+
+Each row represents a **ground-truth retrieval test**:
+
+- `question` — the question sent to the retrieval pipeline;
+- `expected_document` — the source that should be found;
+- `domain` and `difficulty` — optional filters for targeted experiments.
+
+For rewrite-based approaches, GeoScope first generates a
+`rewritten_query`. The benchmark then checks whether that reformulation
+helped the retrieval pipeline find the expected document.
+
+A failed row means **the expected document was not present in the final
+retrieved set**. It should be investigated as a retrieval/configuration
+issue rather than automatically labelled a "bad rewrite".
 """
     )
 

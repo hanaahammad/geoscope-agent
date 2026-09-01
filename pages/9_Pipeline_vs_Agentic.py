@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import sys
 import time
 import uuid
@@ -16,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.agentic_geoscope import run_agentic_workflow
 from src.langchain_pipeline import run_standard_pipeline
+from src.llm_provider import get_generation_model
 from src.monitoring import log_run
 
 st.set_page_config(
@@ -227,6 +229,122 @@ c2.metric("STAC items", len(scenes))
 c3.metric("Distinct dates", len(unique_dates))
 
 
+st.info(
+    """
+**Monitoring behavior on this page**
+
+Every execution is now stored with the framework in its own field:
+
+- **LangChain** → `framework = LangChain`, `execution_mode = Fixed pipeline`
+- **LangGraph** → `framework = LangGraph`, `execution_mode = Agentic bounded workflow`
+
+Both use `application = Framework comparison`, so Page 5 can compare
+orchestration frameworks without mixing framework names into EO use cases.
+"""
+)
+
+
+def _build_context_text(sources) -> str:
+    """Build the text-size observability value from the actual retrieved sources."""
+    return "\n\n".join(
+        str(source.get("text", ""))
+        for source in (sources or [])
+        if source.get("text")
+    )
+
+
+def _log_framework_run(
+    *,
+    run_id: str,
+    framework: str,
+    execution_mode: str,
+    prompt_id: str,
+    result: dict,
+    elapsed: float,
+    scene_count: int,
+) -> tuple[bool, str]:
+    """
+    Write Page 9 runs using the same observability schema as the rest of GeoScope.
+
+    application = business/demo use case
+    framework = LangChain or LangGraph
+    execution_mode = fixed or agentic orchestration
+    """
+    sources = result.get("sources", []) or []
+    trace = result.get("trace", []) or []
+
+    context_text = _build_context_text(sources)
+    context_characters = len(context_text)
+    estimated_context_tokens = (
+        max(1, round(context_characters / 4))
+        if context_characters
+        else 0
+    )
+
+    rewritten_query = (
+        result.get("rewritten_query")
+        or result.get("retrieval_query")
+        or ""
+    )
+
+    values = {
+        "run_id": run_id,
+        "question": question,
+        "answer": result.get("answer", ""),
+        "sources": sources,
+        "latency_seconds": elapsed,
+        "status": "success",
+        "error_message": "",
+
+        # Keep the EO/demo purpose separate from the framework.
+        "application": "Framework comparison",
+        "crop": "",
+        "season": "",
+        "aoi_summary": aoi_summary,
+        "aoi_geojson": aoi_geojson,
+        "stac_scene_count": scene_count,
+        "start_date": str(st.session_state.get("start_date", "")),
+        "end_date": str(st.session_state.get("end_date", "")),
+        "max_cloud_cover": st.session_state.get("max_cloud_cover"),
+
+        # Execution framework.
+        "framework": framework,
+        "execution_mode": execution_mode,
+        "model": get_generation_model(),
+        "prompt_id": prompt_id,
+        "prompt_version": "1.0",
+
+        # Retrieval / context.
+        "retrieval_approach": "rewrite_rerank",
+        "original_query": question,
+        "rewritten_query": rewritten_query,
+        "top_k": top_k,
+        "candidate_k": candidate_k,
+        "chunk_count": len(sources),
+        "context_characters": context_characters,
+        "estimated_context_tokens": estimated_context_tokens,
+
+        # Trace / agent trajectory.
+        "trace": trace,
+        "tool_calls": (
+            trace if framework == "LangGraph" else []
+        ),
+        "step_count": len(trace),
+    }
+
+    try:
+        accepted = inspect.signature(log_run).parameters
+        filtered = {
+            key: value
+            for key, value in values.items()
+            if key in accepted
+        }
+        log_run(**filtered)
+        return True, f"{framework} run logged for Page 5 Monitoring."
+    except Exception as exc:
+        return False, f"{framework} completed, but logging failed: {exc}"
+
+
 def _run_standard():
     started = time.perf_counter()
     run_id = str(uuid.uuid4())
@@ -238,7 +356,24 @@ def _run_standard():
         f"Time-series possible: {'yes' if len(unique_dates) >= 2 else 'no'}"
     )
 
+    progress_text = st.empty()
+    progress = st.progress(0)
+
+    progress_text.info(
+        "**LangChain 1/4 — Preparing fixed pipeline**\n\n"
+        "GeoScope will execute the predefined chain: rewrite → retrieve → "
+        "rerank → context → generate."
+    )
+    progress.progress(10)
+
     with st.spinner("Running deterministic LangChain pipeline..."):
+        progress_text.info(
+            "**LangChain 2/4 — Retrieval and reranking**\n\n"
+            "The chain is retrieving Chroma candidates and applying the "
+            "configured reranking path."
+        )
+        progress.progress(35)
+
         result = run_standard_pipeline(
             question,
             geo_context=geo_context,
@@ -246,40 +381,66 @@ def _run_standard():
             candidate_k=candidate_k,
         )
 
+    progress_text.info(
+        "**LangChain 3/4 — Building observable run**\n\n"
+        "GeoScope records the prompt version, retrieval settings, context size "
+        "and execution trace."
+    )
+    progress.progress(75)
+
     elapsed = time.perf_counter() - started
 
-    output = {
+    logged, log_message = _log_framework_run(
+        run_id=run_id,
+        framework="LangChain",
+        execution_mode="Fixed pipeline",
+        prompt_id="langchain_fixed_rag",
+        result=result,
+        elapsed=elapsed,
+        scene_count=len(scenes),
+    )
+
+    progress.progress(100)
+    progress_text.success(
+        f"**LangChain 4/4 — Complete ✅**  \n"
+        f"{log_message}"
+    )
+
+    return {
         "engine": "LangChain fixed pipeline",
+        "framework": "LangChain",
+        "run_id": run_id,
         "answer": result.get("answer", ""),
         "sources": result.get("sources", []),
         "trace": result.get("trace", []),
         "latency": elapsed,
+        "monitoring_logged": logged,
+        "monitoring_message": log_message,
     }
-
-    log_run(
-        run_id=run_id,
-        question=question,
-        answer=output["answer"],
-        sources=output["sources"],
-        latency_seconds=elapsed,
-        status="success",
-        application=output["engine"],
-        aoi_summary=aoi_summary,
-        aoi_geojson=aoi_geojson,
-        stac_scene_count=len(scenes),
-        start_date=str(st.session_state.get("start_date", "")),
-        end_date=str(st.session_state.get("end_date", "")),
-        max_cloud_cover=st.session_state.get("max_cloud_cover"),
-    )
-
-    return output
 
 
 def _run_agentic():
     started = time.perf_counter()
     run_id = str(uuid.uuid4())
 
+    progress_text = st.empty()
+    progress = st.progress(0)
+
+    progress_text.info(
+        "**LangGraph 1/4 — Initializing planner**\n\n"
+        "The bounded agent receives the question plus current AOI/STAC state "
+        "and decides which permitted action to take next."
+    )
+    progress.progress(10)
+
     with st.spinner("Agent is planning and using tools..."):
+        progress_text.info(
+            "**LangGraph 2/4 — Planning and tool use**\n\n"
+            "The planner can inspect context, use STAC/RAG tools, observe the "
+            "result and choose another action before answering."
+        )
+        progress.progress(35)
+
         result = run_agentic_workflow(
             question,
             aoi_geojson=aoi_geojson,
@@ -294,33 +455,42 @@ def _run_agentic():
             candidate_k=candidate_k,
         )
 
+    progress_text.info(
+        "**LangGraph 3/4 — Capturing trajectory**\n\n"
+        "GeoScope records the agent trace, tool trajectory, prompt version, "
+        "retrieval settings and context size for monitoring."
+    )
+    progress.progress(75)
+
     elapsed = time.perf_counter() - started
 
-    output = {
+    logged, log_message = _log_framework_run(
+        run_id=run_id,
+        framework="LangGraph",
+        execution_mode="Agentic bounded workflow",
+        prompt_id="langgraph_geo_planner",
+        result=result,
+        elapsed=elapsed,
+        scene_count=len(result.get("scenes", scenes)),
+    )
+
+    progress.progress(100)
+    progress_text.success(
+        f"**LangGraph 4/4 — Complete ✅**  \n"
+        f"{log_message}"
+    )
+
+    return {
         "engine": "LangGraph agentic workflow",
+        "framework": "LangGraph",
+        "run_id": run_id,
         "answer": result.get("answer", ""),
         "sources": result.get("sources", []),
         "trace": result.get("trace", []),
         "latency": elapsed,
+        "monitoring_logged": logged,
+        "monitoring_message": log_message,
     }
-
-    log_run(
-        run_id=run_id,
-        question=question,
-        answer=output["answer"],
-        sources=output["sources"],
-        latency_seconds=elapsed,
-        status="success",
-        application=output["engine"],
-        aoi_summary=aoi_summary,
-        aoi_geojson=aoi_geojson,
-        stac_scene_count=len(result.get("scenes", scenes)),
-        start_date=str(st.session_state.get("start_date", "")),
-        end_date=str(st.session_state.get("end_date", "")),
-        max_cloud_cover=st.session_state.get("max_cloud_cover"),
-    )
-
-    return output
 
 
 b1, b2, b3 = st.columns(3)
@@ -388,6 +558,9 @@ if standard_result or agentic_result:
                 len(standard_result.get("sources", [])),
             )
 
+            st.caption(
+                standard_result.get("monitoring_message", "")
+            )
             st.markdown("**Execution trace**")
             trace_df = pd.DataFrame(standard_result.get("trace", []))
             if not trace_df.empty:
@@ -420,6 +593,9 @@ if standard_result or agentic_result:
                 len(agentic_result.get("sources", [])),
             )
 
+            st.caption(
+                agentic_result.get("monitoring_message", "")
+            )
             st.markdown("**Execution trace**")
             trace_df = pd.DataFrame(agentic_result.get("trace", []))
             if not trace_df.empty:

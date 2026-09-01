@@ -25,11 +25,16 @@ from src.retrieval import (
     APPROACH_LABELS,
     search_documents,
 )
-from src.reranking import (
-    FLASHRANK_MODEL_NAME,
-    check_flashrank_ready,
-    flashrank_local_cache_available,
-)
+
+
+# ---------------------------------------------------------------------------
+# AI engineering metadata
+# ---------------------------------------------------------------------------
+RAG_PROMPT_ID = "grounded_geoai_rag"
+RAG_PROMPT_VERSION = "1.0"
+RAG_FRAMEWORK = "Application pipeline"
+RAG_EXECUTION_MODE = "Fixed RAG"
+
 
 
 
@@ -95,7 +100,6 @@ st.set_page_config(
 apply_global_style()
 
 st.title("🤖 Step 3 — Ask GeoAI")
-st.caption("Ask a new question, or continue working with the previous result saved in this Streamlit session.")
 st.caption(
     "Query rewriting, semantic retrieval, FlashRank reranking, "
     "AOI/STAC context, and grounded generation."
@@ -355,20 +359,6 @@ with left:
         },
     )
 
-    if approach in {"rerank", "rewrite_rerank"}:
-        if flashrank_local_cache_available():
-            st.caption(
-                f"✅ FlashRank local cache detected: `{FLASHRANK_MODEL_NAME}`"
-            )
-        else:
-            st.warning(
-                "⚠️ FlashRank local model cache was not detected. "
-                "GeoScope will try to initialize the reranker when you run "
-                "the query. If the model cannot be downloaded in this "
-                "environment, the run will stop cleanly and you can select "
-                "**Vector search** or **Query rewriting + vector search**."
-            )
-
 with right:
     question = st.text_area(
         "Question",
@@ -399,7 +389,6 @@ if scenes:
         f"**{'Yes' if len(unique_dates) >= 2 else 'No'}**"
     )
 
-
 if st.button(
     "Run GeoScope",
     type="primary",
@@ -416,21 +405,6 @@ if st.button(
     try:
         if not question.strip():
             raise ValueError("Please enter a question.")
-
-        if approach in {"rerank", "rewrite_rerank"}:
-            with st.spinner("Checking FlashRank reranker..."):
-                flashrank_ready, flashrank_message = (
-                    check_flashrank_ready()
-                )
-
-            if not flashrank_ready:
-                raise RuntimeError(
-                    "FlashRank reranking is unavailable for this run. "
-                    "Please select **Vector search** or "
-                    "**Query rewriting + vector search**, or install/cache "
-                    f"`{FLASHRANK_MODEL_NAME}` and retry.\n\n"
-                    f"{flashrank_message}"
-                )
 
         scene_lines = [
             (
@@ -495,6 +469,38 @@ Available Sentinel-2 scenes:
 
     latency = time.perf_counter() - started
 
+    # ---------------------------------------------------------------
+    # Capture AI-engineering metadata for Monitoring / Run Explorer.
+    # ---------------------------------------------------------------
+    original_query = augmented_question if "augmented_question" in locals() else question
+    retrieval_query = original_query
+
+    if sources:
+        original_query = sources[0].get(
+            "original_query",
+            original_query,
+        )
+        retrieval_query = sources[0].get(
+            "retrieval_query",
+            original_query,
+        )
+
+    context_text = "\n\n".join(
+        str(source.get("text", ""))
+        for source in sources
+        if source.get("text")
+    )
+    context_characters = len(context_text)
+
+    # We intentionally label this as an estimate because the local model's
+    # exact tokenizer is not invoked here. A common rough estimate is
+    # approximately 4 characters per token for English technical prose.
+    estimated_context_tokens = (
+        max(1, round(context_characters / 4))
+        if context_characters
+        else 0
+    )
+
     log_run(
         run_id=run_id,
         question=question,
@@ -514,6 +520,50 @@ Available Sentinel-2 scenes:
         max_cloud_cover=st.session_state.get(
             "max_cloud_cover"
         ),
+
+        # AI execution
+        framework=RAG_FRAMEWORK,
+        execution_mode=RAG_EXECUTION_MODE,
+        model=get_generation_model(),
+        prompt_id=RAG_PROMPT_ID,
+        prompt_version=RAG_PROMPT_VERSION,
+
+        # Retrieval / context
+        retrieval_approach=approach,
+        original_query=original_query,
+        rewritten_query=(
+            retrieval_query
+            if retrieval_query != original_query
+            else ""
+        ),
+        top_k=top_k,
+        candidate_k=(
+            candidate_k
+            if approach in {"rerank", "rewrite_rerank"}
+            else None
+        ),
+        chunk_count=len(sources),
+        context_characters=context_characters,
+        estimated_context_tokens=estimated_context_tokens,
+
+        # The standard Page 3 flow is deterministic. The known stages are
+        # logged explicitly; Page 9 will later add LangChain/LangGraph traces.
+        trace=[
+            {"step": 1, "name": "Question"},
+            *(
+                [{"step": 2, "name": "Query rewrite"}]
+                if approach in {"rewrite", "rewrite_rerank"}
+                else []
+            ),
+            {"step": 3, "name": "Vector retrieval"},
+            *(
+                [{"step": 4, "name": "FlashRank reranking"}]
+                if approach in {"rerank", "rewrite_rerank"}
+                else []
+            ),
+            {"step": 5, "name": "Build context"},
+            {"step": 6, "name": "Generate grounded answer"},
+        ],
     )
 
     if status == "success":
@@ -527,334 +577,262 @@ Available Sentinel-2 scenes:
         st.session_state["last_retrieval_approach"] = (
             approach
         )
-        st.session_state["last_latency"] = latency
-        st.session_state["last_application"] = application
-        st.session_state["last_crop"] = crop
-        st.session_state["last_season"] = season
-    else:
-        st.session_state["last_run_error"] = error_message
+        st.session_state["last_prompt_id"] = RAG_PROMPT_ID
+        st.session_state["last_prompt_version"] = RAG_PROMPT_VERSION
+        st.session_state["last_framework"] = RAG_FRAMEWORK
+        st.session_state["last_execution_mode"] = RAG_EXECUTION_MODE
+        st.session_state["last_model"] = get_generation_model()
+        st.session_state["last_top_k"] = top_k
+        st.session_state["last_candidate_k"] = (
+            candidate_k
+            if approach in {"rerank", "rewrite_rerank"}
+            else None
+        )
+        st.session_state["last_context_characters"] = context_characters
+        st.session_state["last_estimated_context_tokens"] = (
+            estimated_context_tokens
+        )
 
-
-# ---------------------------------------------------------------------------
-# Persisted result rendering
-# ---------------------------------------------------------------------------
-# Streamlit reruns the full script when any button is clicked.
-# Therefore the answer must be rendered from session_state, not only inside
-# the "Run GeoScope" button block. This keeps the original answer visible
-# while summary / translation / feedback actions are executed.
-
-active_answer = st.session_state.get("last_answer")
-active_sources = st.session_state.get("last_sources", [])
-active_run_id = st.session_state.get("last_run_id")
-active_question = st.session_state.get("last_question", question)
-active_augmented_question = st.session_state.get(
-    "last_augmented_question",
-    "",
-)
-active_approach = st.session_state.get(
-    "last_retrieval_approach",
-    approach,
-)
-active_latency = st.session_state.get(
-    "last_latency",
-    0.0,
-)
-
-if st.session_state.get("last_run_error"):
-    st.error(st.session_state["last_run_error"])
-    st.session_state.pop("last_run_error", None)
-
-if active_answer and active_run_id:
-    st.divider()
-
-    st.info(
-        "A previous GeoScope result is available from the current session. "
-        "You can review it below, reuse it for summary/translation, or clear it "
-        "before starting a new analysis."
-    )
-
-    previous_col, clear_col = st.columns([4, 1])
-
-    with previous_col:
-        st.markdown("### Previous GeoScope result")
-        st.write(f"**Question:** {active_question}")
+        st.subheader("Answer")
+        st.markdown(answer)
         st.caption(
-            f"Run ID: {active_run_id} · "
-            f"Retrieval: {APPROACH_LABELS.get(active_approach, active_approach)} · "
-            f"Latency: {active_latency:.2f} seconds"
+            f"Run ID: {run_id} · "
+            f"Latency: {latency:.2f} seconds"
         )
 
-    with clear_col:
-        st.write("")
-        if st.button(
-            "Clear previous result",
-            key=f"clear_previous_{active_run_id}",
-            use_container_width=True,
-        ):
-            keys_to_clear = [
-                "last_run_id",
-                "last_question",
-                "last_augmented_question",
-                "last_answer",
-                "last_sources",
-                "last_retrieval_approach",
-                "last_latency",
-                "last_application",
-                "last_crop",
-                "last_season",
-                "last_user_feedback",
-            ]
-
-            for key in keys_to_clear:
-                st.session_state.pop(key, None)
-
-            # Remove any post-processing result attached to this run.
-            st.session_state.pop(
-                f"post_processed_answer_{active_run_id}",
-                None,
+        if sources:
+            original_query = sources[0].get(
+                "original_query",
+                augmented_question,
+            )
+            retrieval_query = sources[0].get(
+                "retrieval_query",
+                original_query,
             )
 
-            st.rerun()
-
-    st.subheader("Answer")
-    st.markdown(active_answer)
-    st.caption(
-        f"Run ID: {active_run_id} · "
-        f"Latency: {active_latency:.2f} seconds"
-    )
-
-    if active_sources:
-        original_query = active_sources[0].get(
-            "original_query",
-            active_augmented_question,
-        )
-        retrieval_query = active_sources[0].get(
-            "retrieval_query",
-            original_query,
-        )
-
-        with st.expander(
-            "Inspect retrieval pipeline",
-            expanded=True,
-        ):
-            st.write(
-                f"**Approach:** "
-                f"{APPROACH_LABELS[active_approach]}"
-            )
-            st.caption(
-                "This section explains the retrieval path before answer "
-                "generation. The rewritten query is used only for retrieval; "
-                "the final answer remains grounded in the original user intent "
-                "and retrieved evidence."
-            )
-            st.write("**Original retrieval input**")
-            st.code(original_query)
-            st.write("**Query used for vector search**")
-            st.code(retrieval_query)
-            st.info(
-                "Interpretation: GeoScope first prepares a retrieval-friendly "
-                "query, then performs semantic search, and finally optionally "
-                "reranks the candidate chunks with FlashRank to improve source "
-                "ordering."
-            )
-
-    st.subheader("Retrieved and reranked sources")
-    st.caption(
-        "These are the evidence chunks used to ground the answer. "
-        "Compare vector rank with final rank to see how reranking changed "
-        "the order. Lower vector distance generally means stronger semantic "
-        "similarity."
-    )
-
-    rows = [
-        {
-            "final_rank": source.get("rank"),
-            "vector_rank": source.get("vector_rank"),
-            "file": source.get("file_name"),
-            "page": source.get("page_number"),
-            "vector_distance": round(
-                source.get("distance", 0.0),
-                4,
-            ),
-            "rerank_score": (
-                round(
-                    source.get("rerank_score"),
-                    4,
+            with st.expander(
+                "Inspect retrieval pipeline",
+                expanded=True,
+            ):
+                st.write(
+                    f"**Approach:** "
+                    f"{APPROACH_LABELS[approach]}"
                 )
-                if source.get("rerank_score")
-                is not None
-                else None
-            ),
-        }
-        for source in active_sources
-    ]
+                st.caption(
+                    "This section explains the retrieval path before answer generation. "
+                    "The rewritten query is used only for retrieval; the final answer remains grounded in the original user intent and retrieved evidence."
+                )
+                st.write("**Original retrieval input**")
+                st.code(original_query)
+                st.write("**Query used for vector search**")
+                st.code(retrieval_query)
+                st.info(
+                    "Interpretation: GeoScope first prepares a retrieval-friendly query, then performs semantic search, and finally optionally reranks the candidate chunks with FlashRank to improve source ordering."
+                )
 
-    if rows:
+        st.subheader("Retrieved and reranked sources")
+        st.caption(
+            "These are the evidence chunks used to ground the answer. "
+            "Compare vector rank with final rank to see how reranking changed the order. "
+            "Lower vector distance generally means stronger semantic similarity."
+        )
+
+        rows = [
+            {
+                "final_rank": source.get("rank"),
+                "vector_rank": source.get("vector_rank"),
+                "file": source.get("file_name"),
+                "page": source.get("page_number"),
+                "vector_distance": round(
+                    source.get("distance", 0.0),
+                    4,
+                ),
+                "rerank_score": (
+                    round(
+                        source.get("rerank_score"),
+                        4,
+                    )
+                    if source.get("rerank_score")
+                    is not None
+                    else None
+                ),
+            }
+            for source in sources
+        ]
+
         st.dataframe(
             pd.DataFrame(rows),
             use_container_width=True,
             hide_index=True,
         )
 
-    for index, source in enumerate(
-        active_sources,
-        start=1,
-    ):
-        with st.expander(
-            f"Source {index} — "
-            f"{source.get('file_name', 'Unknown')}"
+        for index, source in enumerate(
+            sources,
+            start=1,
         ):
-            st.write(source.get("text", ""))
-
-    st.divider()
-    st.subheader("Quick human feedback")
-    st.caption(
-        "Human feedback is captured here at the point of use. "
-        "Formal LLM-as-a-judge evaluation remains in Step 4."
-    )
-
-    feedback_key = f"feedback_rating_{active_run_id}"
-    comment_key = f"feedback_comment_{active_run_id}"
-
-    rating = st.radio(
-        "Was this answer useful?",
-        ["👍 Yes", "👎 No"],
-        horizontal=True,
-        key=feedback_key,
-    )
-
-    comment = st.text_area(
-        "Optional comment",
-        placeholder=(
-            "What was useful, unclear, or should be improved?"
-        ),
-        key=comment_key,
-    )
-
-    if st.button(
-        "Save feedback",
-        key=f"save_feedback_{active_run_id}",
-        use_container_width=True,
-    ):
-        try:
-            log_user_feedback(
-                {
-                    "run_id": active_run_id,
-                    "feedback_timestamp": (
-                        datetime.now(
-                            timezone.utc
-                        ).isoformat()
-                    ),
-                    "rating": rating,
-                    "comment": comment,
-                    "question": active_question,
-                }
-            )
-
-            st.session_state["last_user_feedback"] = {
-                "run_id": active_run_id,
-                "rating": rating,
-                "comment": comment,
-            }
-
-            st.success(
-                "Feedback saved. It will be available "
-                "for governance and monitoring metrics."
-            )
-        except Exception as exc:
-            st.error(
-                f"Could not save feedback: {exc}"
-            )
-
-    st.divider()
-    st.markdown("### Summarize or translate")
-    st.caption(
-        "This extends the current page with an additional transformed view. "
-        "The full original grounded answer above stays visible and unchanged. "
-        "Retrieval is not rerun."
-    )
-
-    pp_action_col, pp_language_col, pp_button_col = st.columns(
-        [1.0, 0.9, 1.0]
-    )
-
-    with pp_action_col:
-        post_action = st.selectbox(
-            "Action",
-            [
-                "Summarize",
-                "Translate",
-                "Summarize + Translate",
-            ],
-            key=f"post_action_{active_run_id}",
-        )
-
-    with pp_language_col:
-        target_language = st.selectbox(
-            "Target language",
-            [
-                "English",
-                "French",
-                "Arabic",
-                "Spanish",
-                "German",
-            ],
-            key=f"target_language_{active_run_id}",
-            disabled=(post_action == "Summarize"),
-        )
-
-    with pp_button_col:
-        st.write("")
-        st.write("")
-        run_post_processing = st.button(
-            "Run transformation",
-            key=f"run_post_processing_{active_run_id}",
-            use_container_width=True,
-        )
-
-    if run_post_processing:
-        try:
-            with st.spinner(
-                "Transforming the existing answer..."
+            with st.expander(
+                f"Source {index} — "
+                f"{source.get('file_name', 'Unknown')}"
             ):
-                transformed_answer = (
-                    transform_existing_answer(
-                        answer=active_answer,
-                        action=post_action,
-                        target_language=target_language,
-                    )
+                st.write(source.get("text", ""))
+
+        st.divider()
+        st.subheader("Quick human feedback")
+        st.caption(
+            "Human feedback is captured here at the point of use. "
+            "Formal LLM-as-a-judge evaluation remains in Step 4."
+        )
+
+        feedback_key = f"feedback_rating_{run_id}"
+        comment_key = f"feedback_comment_{run_id}"
+
+        rating = st.radio(
+            "Was this answer useful?",
+            ["👍 Yes", "👎 No"],
+            horizontal=True,
+            key=feedback_key,
+        )
+
+        comment = st.text_area(
+            "Optional comment",
+            placeholder=(
+                "What was useful, unclear, or should be improved?"
+            ),
+            key=comment_key,
+        )
+
+        if st.button(
+            "Save feedback",
+            key=f"save_feedback_{run_id}",
+            use_container_width=True,
+        ):
+            try:
+                log_user_feedback(
+                    {
+                        "run_id": run_id,
+                        "feedback_timestamp": (
+                            datetime.now(
+                                timezone.utc
+                            ).isoformat()
+                        ),
+                        "rating": rating,
+                        "comment": comment,
+                        "question": question,
+                    }
                 )
 
-            st.session_state[
-                f"post_processed_answer_{active_run_id}"
-            ] = {
-                "action": post_action,
-                "language": target_language,
-                "answer": transformed_answer,
-            }
+                st.session_state["last_user_feedback"] = {
+                    "run_id": run_id,
+                    "rating": rating,
+                    "comment": comment,
+                }
 
-        except Exception as exc:
-            st.error(
-                f"Post-processing failed: {exc}"
-            )
+                st.success(
+                    "Feedback saved. It will be available "
+                    "for governance and monitoring metrics."
+                )
+            except Exception as exc:
+                st.error(
+                    f"Could not save feedback: {exc}"
+                )
 
-    post_result = st.session_state.get(
-        f"post_processed_answer_{active_run_id}"
-    )
-
-    if post_result:
-        label = post_result["action"]
-
-        if post_result["action"] != "Summarize":
-            label += (
-                f" — {post_result['language']}"
-            )
-
-        st.markdown(f"#### {label}")
-        st.markdown(post_result["answer"])
-        st.info(
-            "This is an additional transformed view. "
-            "The original grounded answer remains visible above and was not "
-            "replaced. Retrieval, source selection, and evidence were not "
-            "rerun."
+        st.divider()
+        st.markdown("### Summarize or translate")
+        st.caption(
+            "Optional post-processing of the existing grounded answer. "
+            "The full original answer remains visible above and is never "
+            "replaced. GeoScope does not rerun retrieval."
         )
+
+        pp_action_col, pp_language_col, pp_button_col = st.columns(
+            [1.0, 0.9, 1.0]
+        )
+
+        with pp_action_col:
+            post_action = st.selectbox(
+                "Action",
+                [
+                    "Summarize",
+                    "Translate",
+                    "Summarize + Translate",
+                ],
+                key=f"post_action_{run_id}",
+            )
+
+        with pp_language_col:
+            target_language = st.selectbox(
+                "Target language",
+                [
+                    "English",
+                    "French",
+                    "Arabic",
+                    "Spanish",
+                    "German",
+                ],
+                key=f"target_language_{run_id}",
+                disabled=(post_action == "Summarize"),
+            )
+
+        with pp_button_col:
+            st.write("")
+            st.write("")
+            run_post_processing = st.button(
+                "Run transformation",
+                key=f"run_post_processing_{run_id}",
+                use_container_width=True,
+            )
+
+        if run_post_processing:
+            try:
+                with st.spinner(
+                    "Transforming the existing answer..."
+                ):
+                    transformed_answer = (
+                        transform_existing_answer(
+                            answer=answer,
+                            action=post_action,
+                            target_language=target_language,
+                        )
+                    )
+
+                st.session_state[
+                    f"post_processed_answer_{run_id}"
+                ] = {
+                    "action": post_action,
+                    "language": target_language,
+                    "answer": transformed_answer,
+                }
+
+            except Exception as exc:
+                st.error(
+                    f"Post-processing failed: {exc}"
+                )
+
+        post_result = st.session_state.get(
+            f"post_processed_answer_{run_id}"
+        )
+
+        if post_result:
+            label = post_result["action"]
+
+            if post_result["action"] != "Summarize":
+                label += (
+                    f" — {post_result['language']}"
+                )
+
+            with st.expander(
+                f"View transformed answer: {label}",
+                expanded=True,
+            ):
+                st.markdown(
+                    post_result["answer"]
+                )
+                st.info(
+                    "This is an additional transformed view. "
+                    "The full original grounded answer remains unchanged above; "
+                    "retrieval, source selection, and evidence were not rerun."
+                )
+
+
+    else:
+        st.error(error_message)
