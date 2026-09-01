@@ -120,13 +120,13 @@ Vegetation Condition Classification
 
 ## 🏗️ 4. Architecture
 
-**GeoScope architecture**
+GitHub renders the following Mermaid diagram directly in the README:
 
 ```mermaid
-graph TD
-    A[PDF and HTML Knowledge] --> B[Extract Clean Chunk]
+flowchart TD
+    A[PDF / HTML Knowledge] --> B[Extract / Clean / Chunk]
     B --> C[Embeddings]
-    C --> D[Chroma Vector Store]
+    C --> D[(Chroma Vector Store)]
 
     Q[User Question] --> R[Query Rewriting]
     R --> D
@@ -134,27 +134,26 @@ graph TD
     V --> F[FlashRank Reranking]
     F --> G[Top Evidence]
 
-    H[Area of Interest] --> I[Sentinel 2 STAC Search]
-    I --> J[Distinct Date Check]
+    AOI[AOI] --> STAC[Sentinel-2 STAC Search]
+    STAC --> DATE[Scene Count + Distinct-Date Check]
 
-    G --> K[LLM Generation]
-    J --> K
-    K --> L[Grounded GeoAI Answer]
+    G --> LLM[Ollama / Optional OpenAI]
+    DATE --> LLM
+    LLM --> ANSWER[Grounded GeoAI Answer]
 
-    L --> M[Human Feedback]
-    L --> N[LLM Judge]
+    ANSWER --> FB[Human Feedback]
+    ANSWER --> JUDGE[LLM-as-a-Judge]
+    ANSWER --> TRANS[Summarize / Translate]
 
-    M --> O[Monitoring Store]
-    N --> O
+    FB --> LOG[(DuckDB / dlt)]
+    JUDGE --> LOG
+    LOG --> MON[Monitoring + AI Governance]
 
-    I --> P[Red NIR NDVI]
-    P --> S[GeoTIFF]
-    P --> T[Vegetation Classification]
+    STAC --> RASTER[Red / NIR / NDVI]
+    RASTER --> TIFF[Clipped GeoTIFF]
 
-    Q --> U[LangChain Fixed Pipeline]
-    Q --> W[LangGraph Agent]
-    U --> O
-    W --> O
+    STATE[Persistent Analysis State] --> WF[Projects & Workflows]
+    WF --> STATE
 ```
 
 ### Main technology components
