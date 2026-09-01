@@ -120,46 +120,41 @@ Vegetation Condition Classification
 
 ## 🏗️ 4. Architecture
 
-GitHub renders the following Mermaid diagram directly in the README:
+**GeoScope architecture**
 
 ```mermaid
-flowchart TD
+graph TD
+    A[PDF and HTML Knowledge] --> B[Extract Clean Chunk]
+    B --> C[Embeddings]
+    C --> D[Chroma Vector Store]
 
-    A["PDF / HTML Knowledge"] --> B["Extract / Clean / Chunk"]
-    B --> C["Embeddings"]
-    C --> D["Chroma Vector Store"]
-
-    Q["User Question"] --> R["Query Rewriting"]
+    Q[User Question] --> R[Query Rewriting]
     R --> D
-    D --> V["Vector Candidates"]
-    V --> F["FlashRank Reranking"]
-    F --> G["Top Evidence"]
+    D --> V[Vector Candidates]
+    V --> F[FlashRank Reranking]
+    F --> G[Top Evidence]
 
-    AOI["Area of Interest"] --> STAC["Sentinel-2 STAC Search"]
-    STAC --> DATE["Scene Count and Distinct-Date Check"]
+    H[Area of Interest] --> I[Sentinel 2 STAC Search]
+    I --> J[Distinct Date Check]
 
-    G --> LLM["Ollama or Optional OpenAI"]
-    DATE --> LLM
-    LLM --> ANSWER["Grounded GeoAI Answer"]
+    G --> K[LLM Generation]
+    J --> K
+    K --> L[Grounded GeoAI Answer]
 
-    ANSWER --> FB["Human Feedback"]
-    ANSWER --> JUDGE["LLM-as-a-Judge"]
-    ANSWER --> TRANS["Summarize / Translate"]
+    L --> M[Human Feedback]
+    L --> N[LLM Judge]
 
-    FB --> LOG["DuckDB and dlt"]
-    JUDGE --> LOG
-    LOG --> MON["Monitoring and AI Governance"]
+    M --> O[Monitoring Store]
+    N --> O
 
-    STAC --> RASTER["Red / NIR / NDVI"]
-    RASTER --> TIFF["Clipped GeoTIFF"]
-    RASTER --> CLASS["NDVI Vegetation Classification"]
-    CLASS --> CTIFF["Classified GeoTIFF"]
+    I --> P[Red NIR NDVI]
+    P --> S[GeoTIFF]
+    P --> T[Vegetation Classification]
 
-    Q --> LC["LangChain Fixed Pipeline"]
-    Q --> LG["LangGraph Bounded Agent"]
-
-    LC --> LOG
-    LG --> LOG
+    Q --> U[LangChain Fixed Pipeline]
+    Q --> W[LangGraph Agent]
+    U --> O
+    W --> O
 ```
 
 ### Main technology components
