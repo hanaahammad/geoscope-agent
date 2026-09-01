@@ -124,41 +124,40 @@ GitHub renders the following Mermaid diagram directly in the README:
 
 ```mermaid
 flowchart TD
-    A[PDF / HTML Knowledge] --> B[Extract / Clean / Chunk]
-    B --> C[Embeddings]
-    C --> D[(Chroma Vector Store)]
 
-    Q[User Question] --> R[Query Rewriting]
+    A["PDF / HTML Knowledge"] --> B["Extract / Clean / Chunk"]
+    B --> C["Embeddings"]
+    C --> D["Chroma Vector Store"]
+
+    Q["User Question"] --> R["Query Rewriting"]
     R --> D
-    D --> V[Vector Candidates]
-    V --> F[FlashRank Reranking]
-    F --> G[Top Evidence]
+    D --> V["Vector Candidates"]
+    V --> F["FlashRank Reranking"]
+    F --> G["Top Evidence"]
 
-    AOI[AOI] --> STAC[Sentinel-2 STAC Search]
-    STAC --> DATE[Scene Count + Distinct-Date Check]
+    AOI["Area of Interest"] --> STAC["Sentinel-2 STAC Search"]
+    STAC --> DATE["Scene Count and Distinct-Date Check"]
 
-    G --> LLM[Ollama / Optional OpenAI]
+    G --> LLM["Ollama or Optional OpenAI"]
     DATE --> LLM
-    LLM --> ANSWER[Grounded GeoAI Answer]
+    LLM --> ANSWER["Grounded GeoAI Answer"]
 
-    ANSWER --> FB[Human Feedback]
-    ANSWER --> JUDGE[LLM-as-a-Judge]
-    ANSWER --> TRANS[Summarize / Translate]
+    ANSWER --> FB["Human Feedback"]
+    ANSWER --> JUDGE["LLM-as-a-Judge"]
+    ANSWER --> TRANS["Summarize / Translate"]
 
-    FB --> LOG[(DuckDB / dlt)]
+    FB --> LOG["DuckDB and dlt"]
     JUDGE --> LOG
-    LOG --> MON[Monitoring + AI Governance]
+    LOG --> MON["Monitoring and AI Governance"]
 
-    STAC --> RASTER[Red / NIR / NDVI]
-    RASTER --> TIFF[Clipped GeoTIFF]
-    RASTER --> CLASS[NDVI Threshold Classification]
-    CLASS --> CTIFF[Classified GeoTIFF]
+    STAC --> RASTER["Red / NIR / NDVI"]
+    RASTER --> TIFF["Clipped GeoTIFF"]
+    RASTER --> CLASS["NDVI Vegetation Classification"]
+    CLASS --> CTIFF["Classified GeoTIFF"]
 
-    STATE[Persistent Analysis State] --> WF[Projects & Workflows]
-    WF --> STATE
+    Q --> LC["LangChain Fixed Pipeline"]
+    Q --> LG["LangGraph Bounded Agent"]
 
-    Q --> LC[LangChain Fixed Pipeline]
-    Q --> LG[LangGraph Bounded Agent]
     LC --> LOG
     LG --> LOG
 ```
