@@ -1,112 +1,124 @@
-GeoScope Agent — User Guide
+# GeoScope Agent — User Guide
 
-1. Purpose of this guide
+> **GeoScope helps Earth Observation researchers understand how AI can support their workflows — without replacing domain expertise.**
+
+---
+
+## 1. Purpose of This Guide
 
 GeoScope is designed to help Earth Observation researchers and analysts explore how AI can support their analytical workflow.
 
-It is not intended to replace remote-sensing expertise or to make autonomous scientific decisions.
+It is **not** intended to replace remote-sensing expertise or make autonomous scientific decisions.
 
 GeoScope combines:
 
+```text
 Earth Observation knowledge
 + geographic context
 + live satellite catalogue information
 + AI-assisted retrieval and generation
-+ simple raster processing
++ deterministic raster processing
 + evaluation
++ monitoring
 + governance
 + persistent workflow state
++ fixed and agentic orchestration
+```
 
-This guide explains the application page by page and suggests a complete demonstration workflow.
+This guide explains the application page by page and provides a complete reviewer/demo workflow.
 
-2. What you can do with GeoScope
+---
+
+## 2. What You Can Do with GeoScope
 
 With GeoScope, an Earth Observation researcher can:
 
-prepare and index technical PDF/HTML knowledge;
+- prepare and index technical PDF/HTML knowledge;
+- define an AOI by drawing on a map or searching a place name;
+- query live Sentinel-2 STAC data by date and cloud cover;
+- distinguish scene-item count from distinct acquisition dates;
+- generate Red, NIR, and NDVI GeoTIFF outputs;
+- ask grounded Earth Observation questions using RAG;
+- compare vector search, query rewriting, reranking, and Rewrite + Rerank;
+- inspect retrieved evidence, vector ranks, final ranks, distances, and reranking scores;
+- provide immediate human feedback;
+- summarize or translate an existing grounded answer without rerunning retrieval;
+- run retrieval evaluation using Hit Rate and MRR;
+- run structured LLM-as-a-judge generation evaluation;
+- inspect verdicts such as PASS / NEEDS REVIEW / FAIL;
+- monitor runs, prompts, context, frameworks, traces, latency, quality signals, and governance metadata;
+- hide historical/incomplete monitoring rows while keeping them stored;
+- run an automated end-to-end demonstration with visible progress;
+- save, resume, complete, and archive persistent analysis projects;
+- compare a fixed LangChain pipeline with a bounded LangGraph agentic workflow;
+- execute a deterministic vegetation-condition classification from Sentinel-2 NDVI;
+- generate a classified GeoTIFF and mapped class statistics;
+- run GeoScope locally, validate it through Docker, and test Ollama Cloud integration separately.
 
-define an AOI by drawing on a map or searching a place name;
+The application is deliberately designed to show **where AI adds value and where a simpler deterministic workflow is preferable**.
 
-query live Sentinel-2 STAC data by date and cloud cover;
+---
 
-distinguish scene-item count from distinct acquisition dates;
+## 3. Before Starting
 
-generate Red, NIR, and NDVI GeoTIFF outputs;
-
-ask grounded Earth Observation questions using RAG;
-
-compare vector search, query rewriting, reranking, and the full retrieval pipeline;
-
-inspect retrieved evidence, vector ranks, final ranks, and reranking scores;
-
-provide immediate human feedback;
-
-summarize or translate an existing grounded answer without rerunning retrieval;
-
-run retrieval evaluation using Hit Rate and MRR;
-
-run structured LLM-as-a-judge generation evaluation;
-
-monitor runs, quality signals, and AI-governance metrics;
-
-save, resume, complete, and archive persistent analysis projects;
-
-compare a fixed LangChain pipeline with a bounded LangGraph agentic workflow;
-
-run GeoScope locally, validate it through Docker, and test Ollama Cloud integration separately.
-
-The application is deliberately designed to show where AI adds value and where a simpler deterministic workflow is preferable.
-
-3. Before starting
-
-Required local models
+### 3.1 Required local models
 
 GeoScope uses Ollama locally by default.
 
-Install/pull:
-
+```cmd
 ollama pull qwen2.5:7b-instruct
 ollama pull nomic-embed-text
 ollama pull llama3.1:8b
+```
 
-Roles:
-
-Task
-
-Model
-
-Answer generation
-
-qwen2.5:7b-instruct
-
-Query rewriting
-
-qwen2.5:7b-instruct
-
-Embeddings
-
-nomic-embed-text
-
-LLM-as-a-judge
-
-llama3.1:8b
+| Task | Model |
+|---|---|
+| Answer generation | `qwen2.5:7b-instruct` |
+| Query rewriting | `qwen2.5:7b-instruct` |
+| Embeddings | `nomic-embed-text` |
+| LLM-as-a-judge | `llama3.1:8b` |
 
 Start Ollama if necessary:
 
+```cmd
 ollama serve
+```
 
-Start GeoScope
+### 3.2 Start GeoScope
 
+```cmd
 python -m streamlit run GeoScope.py
+```
 
 Then open:
 
+```text
 http://localhost:8501
+```
 
-3. Recommended GeoScope workflow
+### 3.3 Streamlit configuration
 
-A complete research-assisted workflow looks like this:
+Create:
 
+```text
+.streamlit/secrets.toml
+```
+
+Typical local configuration:
+
+```toml
+GEOSCOPE_PROVIDER = "ollama"
+OLLAMA_GENERATION_MODEL = "qwen2.5:7b-instruct"
+OLLAMA_JUDGE_MODEL = "llama3.1:8b"
+```
+
+> Never commit `.streamlit/secrets.toml`.
+
+---
+
+## 4. Recommended GeoScope Workflow
+
+```text
 1. Prepare knowledge
        ↓
 2. Define AOI + inspect Sentinel-2 availability
@@ -117,105 +129,86 @@ A complete research-assisted workflow looks like this:
        ↓
 5. Evaluate retrieval and generation
        ↓
-6. Monitor quality and governance
+6. Monitor quality, context, frameworks and governance
        ↓
-7. Save / resume the project
+7. Run the Automated Demo
        ↓
-8. Compare fixed vs agentic orchestration
+8. Save / resume the project
+       ↓
+9. Compare fixed vs agentic orchestration
+       ↓
+10. Execute vegetation-condition classification
+```
 
-The steps do not always have to be executed in this exact order. The application is deliberately exploratory.
+The steps do not always have to be executed in this exact order. GeoScope is deliberately exploratory.
 
-4. Page 1 — Data Preparation
+---
 
-Objective
+# 5. Page 1 — Data Preparation
+
+## Objective
 
 Prepare the technical knowledge base used by GeoScope RAG.
 
-Typical flow:
-
+```text
 PDF / HTML
 → extract text
 → clean
 → chunk
 → embed
 → Chroma vector store
+```
 
 The user can upload or confirm knowledge documents, process them, and build the vector index.
 
-Why this matters
+The LLM should not be expected to answer Earth Observation questions from model memory alone. GeoScope retrieves relevant technical evidence first and gives it to the LLM as context.
 
-The LLM should not be expected to answer Earth Observation questions from model memory alone.
+---
 
-GeoScope retrieves relevant technical evidence first and gives it to the LLM as context.
+# 6. Page 2 — AOI and STAC
 
-5. Page 2 — AOI and STAC
-
-Objective
+## Objective
 
 Connect the AI assistant to the real geographic and satellite-data context.
 
-Define an AOI
+### Define an AOI
 
-An AOI (Area of Interest) can be defined by:
+An AOI can be defined by:
 
-drawing on the map;
+- drawing on the map;
+- searching a place name such as `Kom Ombo, Aswan, Egypt`.
 
-searching a place name, for example Kom Ombo, Aswan, Egypt.
-
-Search Sentinel-2
+### Search Sentinel-2
 
 Choose:
 
-start date;
-
-end date;
-
-maximum cloud cover.
+- start date;
+- end date;
+- maximum cloud cover.
 
 GeoScope searches the live Earth Search STAC catalogue for Sentinel-2 Level-2A scenes intersecting the AOI.
 
-Important temporal rule
+### Important temporal rule
 
-Do not confuse scene count with temporal observations.
-
+```text
 10 STAC items
 does not necessarily mean
 10 different dates
+```
 
-Several returned items may be tiles from the same acquisition date.
+Several items may be tiles from the same acquisition date.
 
-GeoScope therefore calculates:
+GeoScope therefore calculates both scene-item count and distinct acquisition-date count before supporting a time-series recommendation.
 
-number of scene items;
-
-number of distinct acquisition dates.
-
-A time-series recommendation should only be considered when there is sufficient temporal coverage.
-
-GeoTIFF processing
-
-What is a GeoTIFF?
-
-A GeoTIFF is a raster file containing both:
-
-pixel values;
-
-geographic reference information.
-
-This means the output knows where it belongs on the Earth.
-
-What GeoScope can generate
+### GeoTIFF processing
 
 For one selected Sentinel-2 scene and the current AOI, GeoScope can generate:
 
-Red;
+- Red;
+- NIR;
+- NDVI.
 
-NIR;
-
-NDVI.
-
-Flow:
-
+```text
 Selected STAC scene
       ↓
 Select Red / NIR / NDVI
@@ -227,283 +220,235 @@ Clip to AOI
 Generate GeoTIFF
       ↓
 Download / open in GIS
+```
 
-The result can be opened in QGIS or ArcGIS.
+The current demonstration intentionally remains limited to one AOI + one selected scene + one product → one GeoTIFF.
 
-Current processing scope
+GeoScope does not currently implement a full production chain such as multi-tile mosaicking, full cloud masking, or aligned multi-date raster cubes.
 
-The demonstration intentionally remains simple:
+---
 
-one AOI
-+ one selected scene
-+ one product
-→ one GeoTIFF
+# 7. Page 3 — Ask GeoAI
 
-It does not yet implement a full production processing chain such as cloud masking, mosaicking, or multi-date raster cubes.
-
-6. Page 3 — Ask GeoAI
-
-Objective
+## Objective
 
 Ask a technical Earth Observation question and inspect how GeoScope builds a grounded answer.
 
-The page deliberately shows more than the final answer.
+### Retrieval approaches
 
-Retrieval approaches
+| Option | What happens |
+|---|---|
+| Vector | Original query → semantic search |
+| Rewrite | Query rewrite → semantic search |
+| Rerank | Semantic candidates → FlashRank |
+| Rewrite + Rerank | Query rewrite → semantic candidates → FlashRank |
 
-Option
+For the strongest advanced retrieval path, use **Rewrite + Rerank**.
 
-What happens
+### Query rewriting
 
-Vector
+Query rewriting occurs **before retrieval**.
 
-Original query → semantic search
+```text
+Original:
+How can I monitor drought?
 
-Rewrite
+Rewritten for retrieval:
+Earth observation methods for drought monitoring using vegetation indices,
+soil moisture, precipitation anomalies, Sentinel-2 and MODIS
+```
 
-Query rewrite → semantic search
+The rewritten query is used only to search the knowledge base. It does not replace the user's original intent and it does not rewrite the final answer after generation.
 
-Rerank
+### What the user can inspect
 
-Semantic candidates → FlashRank
+- original retrieval input;
+- rewritten query;
+- vector rank;
+- final rank;
+- vector distance;
+- FlashRank rerank score;
+- retrieved source text.
 
-Rewrite + Rerank
+GeoScope exposes the observable processing pipeline and evidence selection. It does not claim to expose hidden LLM reasoning.
 
-Query rewrite → semantic candidates → FlashRank
+### Human feedback
 
-For the strongest retrieval path, use:
+The user can record:
 
-Rewrite + Rerank
+- 👍 Yes
+- 👎 No
+- optional comment
 
-How to interpret the retrieval results
+Detailed automated evaluation remains on Page 4.
 
-Original retrieval input
-The user's original question plus the relevant GeoScope context.
+### Summarize and translate
 
-Rewritten query
-An LLM-generated version optimized for semantic retrieval. It is used for retrieving evidence and does not replace the user's original intent.
-
-Vector rank
-The initial position returned by semantic vector search.
-
-Final rank
-The position after FlashRank reranking.
-
-Rerank score
-A relevance estimate used to reorder the candidate evidence.
-
-Why expose these details?
-
-This supports AI governance:
-
-Explainability
-→ how was the evidence selected?
-
-Transparency
-→ which retrieval method was used?
-
-GeoScope does not claim to expose the hidden internal reasoning of the LLM. It exposes the observable processing pipeline and evidence selection.
-
-Human feedback
-
-Immediately after reviewing the answer, the user can record:
-
-👍 Yes
-or
-👎 No
-
-and optionally provide a comment.
-
-This is intentionally captured at the point of use.
-
-The detailed automated evaluation remains on Page 4.
-
-Summarize and translate
-
-The original grounded answer stays visible.
+The original grounded answer remains visible.
 
 The user can additionally choose:
 
-Summarize;
+- Summarize;
+- Translate;
+- Summarize + Translate.
 
-Translate;
+Supported UI languages include English, French, Arabic, Spanish, and German.
 
-Summarize + Translate.
+Retrieval is **not rerun** for this transformation.
 
-Target languages include:
+---
 
-English;
+# 8. Page 4 — Evaluation and Feedback
 
-French;
+## Objective
 
-Arabic;
+Evaluate retrieval and answer generation systematically.
 
-Spanish;
+### Retrieval evaluation
 
-German.
+Ground-truth questions:
 
-Flow:
-
-Original grounded answer
-       ↓
-Optional transformation
-       ↓
-Additional summary / translation
-
-GeoScope does not rerun retrieval for this transformation.
-
-The transformation is instructed to preserve:
-
-Earth Observation terminology;
-
-sensor/dataset names;
-
-bands;
-
-spectral indices;
-
-numbers;
-
-limitations;
-
-references.
-
-7. Page 4 — Evaluation and Feedback
-
-Objective
-
-Evaluate the retrieval pipeline and the generated answer systematically.
-
-Human feedback is already captured in Ask GeoAI. This page focuses on formal evaluation.
-
-Retrieval evaluation
-
-GeoScope uses a ground-truth question set:
-
+```text
 data/evaluation_questions.csv
+```
 
 Metrics:
 
-Hit Rate
+- **Hit Rate** — whether the expected relevant document is retrieved;
+- **Mean Reciprocal Rank (MRR)** — how high the expected result appears.
 
-Measures whether the expected relevant document appears in the retrieved results.
+The same questions are evaluated through:
 
-Mean Reciprocal Rank (MRR)
+- vector;
+- rewrite;
+- rerank;
+- rewrite + rerank.
 
-Measures how high the expected result appears in the ranked list.
+### Questions requiring improvement
 
-GeoScope evaluates the same questions through:
+A question is flagged when the expected supporting document was not retrieved successfully. This indicates a retrieval issue; it is not automatically an answer-generation failure.
 
-vector;
+### LLM-as-a-judge
 
-rewrite;
+The judge evaluates:
 
-rerank;
+- relevance;
+- groundedness;
+- completeness;
+- technical correctness;
+- citation quality;
+- geographic relevance;
+- overall assessment.
 
-rewrite + rerank.
+Judge model:
 
-This allows a direct comparison of retrieval strategies.
-
-LLM-as-a-judge
-
-GeoScope uses a separate judge model to assess answer quality.
-
-Current evaluation dimensions include:
-
-relevance;
-
-groundedness;
-
-completeness;
-
-technical correctness;
-
-citation quality;
-
-geographic relevance;
-
-overall assessment.
-
-The local judge model is:
-
+```text
 llama3.1:8b
+```
 
-The objective is to complement, not replace, human evaluation.
+The evaluation is also summarized into an operational verdict:
 
-8. Page 5 — Monitoring and AI Governance
+```text
+PASS
+NEEDS REVIEW
+FAIL
+```
 
-Objective
+A diagnostic/failure category may also be recorded.
 
-Inspect what has happened across GeoScope runs and evaluate the quality/governance of the system.
+---
 
-Monitoring uses DuckDB with the project dlt logging layer.
+# 9. Page 5 — Monitoring and AI Governance
 
-Governance dimensions
+## Objective
 
-Groundedness
+Inspect what happened across GeoScope runs and understand operational quality, observability, and governance.
 
-Is the answer supported by retrieved evidence?
+### Application vs framework vs execution mode
 
-Explainability
+| Field | Meaning |
+|---|---|
+| Application | What GeoScope is doing |
+| Framework | Which execution/orchestration layer is used |
+| Execution mode | How that framework behaves for that run |
 
-Can the user inspect how evidence was selected?
+Examples:
 
-GeoScope exposes:
+| Run type | Application | Framework | Execution mode |
+|---|---|---|---|
+| Ask GeoAI | Crop monitoring / selected EO use case | Application RAG | Fixed RAG |
+| Automated Demo | Automated GeoScope demo | Application RAG | Automated fixed RAG demo |
+| Page 9 fixed | Framework comparison | LangChain | Fixed pipeline |
+| Page 9 agentic | Framework comparison | LangGraph | Agentic bounded workflow |
+| Page 10 | Vegetation condition classification | Application geospatial workflow | Deterministic raster classification |
 
-rewritten query;
+This separation is intentional:
 
-retrieval strategy;
+> Crop monitoring / Urban heat are EO use cases. LangChain / LangGraph are orchestration frameworks.
 
-source ranks;
+### Fully instrumented run metadata
 
-reranking scores;
+A current run may contain:
 
-source text.
+```text
+run_id
+created_at
+question
+application
+framework
+execution_mode
+model
+prompt_id
+prompt_version
+retrieval_approach
+original_query
+rewritten_query
+top_k
+candidate_k
+chunk_count
+context_characters
+estimated_context_tokens
+answer
+latency_seconds
+status
+trace
+tool_calls
+step_count
+```
 
-Transparency
+Judge results and human feedback are associated through `run_id`.
 
-GeoScope exposes the operational setup and important limitations rather than presenting the AI as a black box.
+### Historical / incomplete runs
 
-Human oversight
+Older records may predate the richer observability schema.
 
-The researcher remains responsible for accepting or rejecting the recommendation.
+Page 5 provides:
 
-GeoScope records human feedback.
+```text
+Show historical / incomplete runs (Not recorded)
+```
 
-Reliability
+Unchecked focuses on fully instrumented runs. Checked includes historical/incomplete rows. Historical data is not deleted.
 
-Retrieval metrics and LLM-as-a-judge scores provide systematic quality signals.
+### Governance dimensions
 
-Traceability / auditability
+- **Groundedness** — answer supported by evidence.
+- **Explainability** — visible query rewrite, ranks, reranking, sources, framework and trace.
+- **Transparency** — model, prompt, retrieval, context, execution mode and limitations are visible.
+- **Human oversight** — user feedback and validation.
+- **Reliability** — retrieval metrics + LLM-as-a-judge.
+- **Traceability** — run IDs, timestamps, traces, feedback and workflow events.
+- **Responsible use** — safeguards against unsupported geospatial conclusions and over-reliance on AI.
 
-Runs, timestamps, feedback, evaluation, and persistent workflow events allow the analytical path to be reconstructed.
+---
 
-Ethical / responsible use
+# 10. Page 6 — Automated Demo
 
-This dimension is context-specific.
+## Objective
 
-GeoScope primarily uses public Earth Observation and technical data and does not perform personal profiling or demographic decision-making.
+Run a prepared end-to-end GeoScope scenario with minimal interaction and visible progress.
 
-Therefore, governance focuses on relevant risks such as:
-
-unsupported geospatial conclusions;
-
-misleading temporal interpretation;
-
-hallucinated technical claims;
-
-lack of evidence;
-
-over-reliance on an AI answer.
-
-9. Page 6 — Automated Demo
-
-Objective
-
-Run a prepared end-to-end GeoScope scenario with minimal interaction.
-
-Typical flow:
-
+```text
 Resolve AOI
 → STAC search
 → check distinct dates
@@ -513,23 +458,31 @@ Resolve AOI
 → generate answer
 → optional GeoTIFF
 → monitoring log
+```
 
-Recommended demo place:
+Recommended place:
 
+```text
 Kom Ombo, Aswan, Egypt
+```
 
-For a quick demonstration, GeoTIFF generation can remain disabled.
+The page shows visible progress with a step counter and progress bar so the workflow does not appear as a black box.
 
-For a full demonstration, enable raster generation after checking network access.
+For a quick demonstration, GeoTIFF generation can remain disabled. Enable it for the fuller workflow when remote raster access is stable.
 
-10. Page 7 — Projects and Workflows
+The run is logged as an **Application RAG** workflow, not as LangChain or LangGraph.
 
-Objective
+---
 
-Turn GeoScope from a temporary chat/session into a stateful analytical assistant.
+# 11. Page 7 — Projects and Workflows
 
-An analysis can be represented as a persistent project:
+## Objective
 
+Turn GeoScope from a temporary session into a stateful analytical assistant.
+
+Example:
+
+```text
 Project: Kom Ombo Wheat Monitoring
 
 1. AOI defined
@@ -539,305 +492,387 @@ Project: Kom Ombo Wheat Monitoring
 5. GeoTIFF processing
 6. Evaluation
 7. Completion
+```
 
-The project can be:
-
-created;
-
-saved;
-
-resumed;
-
-completed;
-
-archived.
-
-Why this matters
-
-A researcher may not complete an analysis in one session.
-
-Persistent workflows allow the user to return later and continue from the saved state rather than reconstructing the analysis manually.
+A project can be created, saved, resumed, completed, and archived.
 
 Possible persisted information includes:
 
-AOI;
+- AOI;
+- date range;
+- STAC scenes;
+- question;
+- retrieval approach;
+- retrieved sources;
+- answer;
+- GeoTIFF metadata;
+- evaluation;
+- project history.
 
-date range;
+GeoScope also distinguishes implemented EO processing from guided or partially implemented workflows so it does not claim every EO scenario is fully automated.
 
-STAC scenes;
+---
 
-question;
+# 12. Page 8 — Cloud Deployment Test
 
-retrieval approach;
+## Objective
 
-retrieved sources;
+Experimentally validate whether GeoScope can use Ollama Cloud when the Streamlit application is deployed remotely.
 
-answer;
+Correct terminology:
 
-GeoTIFF metadata;
-
-evaluation;
-
-project history.
-
-11. Page 8 — Cloud Deployment Test
-
-Objective
-
-Experimentally validate whether GeoScope could use Ollama Cloud when deployed on Streamlit Community Cloud.
-
-Important terminology:
-
+```text
 GeoScope application
 → deployed on Streamlit Community Cloud
 
-LLM inference
+Remote LLM inference
 → provided by Ollama Cloud
+```
 
-GeoScope itself is not deployed on Ollama Cloud.
+The page can test:
 
-The page tests:
-
-API-key configuration;
-
-cloud connection;
-
-model discovery;
-
-generation;
-
-judge/query-rewrite suitability;
-
-embeddings.
+- API-key configuration;
+- cloud connection;
+- model discovery;
+- generation;
+- judge/query-rewrite suitability;
+- embeddings;
+- vector-index compatibility considerations.
 
 This page is optional and isolated from the default local workflow.
 
-12. Page 9 — Fixed Pipeline vs Agentic
+---
 
-Objective
+# 13. Page 9 — Fixed Pipeline vs Agentic
+
+## Objective
 
 Demonstrate the difference between a predefined RAG pipeline and a bounded agentic workflow.
 
-Fixed LangChain pipeline
+### Fixed LangChain pipeline
 
+```text
 Question
 → Rewrite
 → Retrieve
 → Rerank
 → Context
 → Generate
+```
 
-The order is predetermined.
+The order is predetermined and appropriate when the required steps are known and repeatable.
 
-This approach is appropriate when the required steps are known.
+LangChain provides a structured, composable, reproducible way to connect the pipeline components. It does not make the model more accurate by itself.
 
-What LangChain adds
+### Agentic LangGraph workflow
 
-LangChain provides a structured, composable, reproducible way to connect the pipeline components.
-
-Using LangChain does not make the model more accurate by itself.
-
-Agentic LangGraph workflow
-
+```text
 Question
 → Planner
 → Tool
 → Observation
 → Planner
-→ ...
+→ next permitted action
 → Final answer
+```
 
-The planner chooses the next permitted action according to the question and current GeoScope state.
-
-What LangGraph adds
-
-LangGraph provides:
-
-stateful orchestration;
-
-conditional routing;
-
-bounded tool use;
-
-visible execution traces.
+LangGraph provides stateful orchestration, conditional routing, bounded tool use, and visible execution traces.
 
 The agent does not replace the underlying validated functions.
 
-Question types
+### Question types
 
-The page includes prepared question categories.
+**Simple knowledge question**
 
-Simple knowledge question
+> What is NDVI and which Sentinel-2 bands are used?
 
-Example:
+Usually fixed pipeline.
 
-What is NDVI and which Sentinel-2 bands are used?
+**Knowledge synthesis**
 
-Usually a fixed pipeline is enough.
+> How can Sentinel-2 and Landsat be combined for long-term crop monitoring?
 
-Knowledge synthesis
+Usually fixed pipeline.
 
-Example:
+**Context-aware analysis**
 
-How can Sentinel-2 and Landsat be combined for long-term crop monitoring?
+> Check whether the current AOI has suitable Sentinel-2 scenes and tell me if NDVI analysis is possible.
 
-A fixed pipeline is usually sufficient.
+Agentic orchestration can add value.
 
-Context-aware analysis
+**Decision requiring context**
 
-Example:
+> What should I verify before recommending a time-series analysis for this AOI?
 
-Check whether the current AOI has suitable Sentinel-2 scenes
-and tell me if NDVI analysis is possible.
+The agent may need to inspect AOI/STAC state before choosing a tool.
 
-Agentic orchestration can add value because the assistant may need to inspect the current context.
+### Compare both
 
-Decision requiring context
+The clearest reviewer demonstration is to execute the **same question** through both paths.
 
-Example:
+Page 9 exposes latency, source count, answers, execution traces, and evidence.
 
-What should I verify before recommending a time-series analysis
-for this AOI?
+### Monitoring integration
 
-The agent may need to inspect AOI/STAC state before deciding which tool to call.
+```text
+LangChain:
+application = Framework comparison
+framework = LangChain
+execution_mode = Fixed pipeline
 
-Key takeaway
+LangGraph:
+application = Framework comparison
+framework = LangGraph
+execution_mode = Agentic bounded workflow
+```
 
-Use the simplest orchestration pattern that solves the task.
+This allows Page 5 to show LangChain and LangGraph as distinct execution frameworks.
 
-Agentic AI is useful when the next step depends on context. It is unnecessary when a predictable fixed pipeline already solves the problem.
+> **Key takeaway:** use the simplest orchestration pattern that solves the task.
 
-13. Docker usage
+---
 
-GeoScope is containerized.
+# 14. Page 10 — Vegetation Condition Classification
 
-For normal development, local Streamlit is faster:
+## Objective
 
+Execute a bounded Earth Observation task from the current AOI and Sentinel-2 imagery.
+
+Example request:
+
+> Using the current AOI, find a suitable Sentinel-2 image and create a vegetation-condition classification from NDVI.
+
+Workflow:
+
+```text
+Task request
+→ inspect current AOI
+→ find / reuse Sentinel-2 imagery
+→ read Red + NIR
+→ calculate NDVI
+→ classify NDVI
+→ calculate statistics
+→ create classified GeoTIFF
+→ map result
+→ log execution
+```
+
+### Why this is not generic land-cover classification
+
+Page 10 implements **NDVI vegetation-signal classification**.
+
+It does not claim to classify crop species, general land cover, buildings, roads, or validated crop health.
+
+### Current classes
+
+| NDVI range | Interpretation |
+|---|---|
+| `< 0.00` | Negative / non-vegetation signal |
+| `0.00–0.20` | Very low vegetation signal |
+| `0.20–0.40` | Low vegetation signal |
+| `0.40–0.60` | Moderate vegetation signal |
+| `≥ 0.60` | High vegetation signal |
+
+These thresholds are transparent demonstration rules and should not be treated as universal agronomic rules.
+
+### Outputs
+
+The page can produce:
+
+- class distribution statistics;
+- pixel counts;
+- percentages;
+- interactive classified map;
+- original NDVI GeoTIFF;
+- classified GeoTIFF.
+
+### Scientific and AI separation
+
+The LLM does **not** classify pixels. Raster calculations are deterministic.
+
+Monitoring records:
+
+```text
+Application = Vegetation condition classification
+Framework = Application geospatial workflow
+Execution mode = Deterministic raster classification
+Model = No LLM used for pixel classification
+```
+
+---
+
+# 15. Docker Usage
+
+For normal development:
+
+```cmd
 python -m streamlit run GeoScope.py
+```
 
-For final reproducibility testing:
+For reproducibility testing:
 
+```cmd
 docker compose up --build
+```
 
 Then open:
 
+```text
 http://localhost:8501
+```
 
-On Windows with Docker Desktop, the GeoScope container can connect to Ollama running on the host through:
+On Windows with Docker Desktop, the application container can connect to Ollama running on the host through:
 
+```text
 http://host.docker.internal:11434
+```
 
-The Ollama models do not need to be baked into the GeoScope image.
+---
 
-14. Suggested 6-minute demonstration
+# 16. Suggested 7-Minute Demonstration
 
-A concise peer-review demonstration could follow this sequence:
+### Minute 1 — Problem
 
-Minute 1 — Problem
+Explain that GeoScope connects EO technical knowledge with real satellite availability, geographic context, and traceable AI engineering.
 
-Explain that GeoScope helps EO researchers connect technical knowledge with actual satellite availability and geographic context.
-
-Minute 2 — AOI / STAC
+### Minute 2 — AOI / STAC
 
 Define an AOI and search Sentinel-2.
 
 Highlight:
 
+```text
 scene items ≠ distinct acquisition dates
+```
 
-Minute 3 — Ask GeoAI
+### Minute 3 — Ask GeoAI
 
-Run Rewrite + Rerank.
+Run **Rewrite + Rerank** and show the rewritten query, ranks, reranking score, evidence, answer, and human feedback.
+
+### Minute 4 — Evaluation / Monitoring
+
+Show Hit Rate/MRR, LLM-as-a-judge, verdict, and Monitoring.
+
+Explain:
+
+```text
+application ≠ framework ≠ execution mode
+```
+
+### Minute 5 — Automated Demo
+
+Show the visible progress counter and guided end-to-end execution.
+
+### Minute 6 — Pipeline vs Agentic
+
+Run **Compare both** and show LangChain vs LangGraph traces and their Monitoring rows.
+
+### Minute 7 — Vegetation Classification
 
 Show:
 
-rewritten query;
+```text
+AOI
+→ Sentinel-2
+→ NDVI
+→ vegetation-signal classes
+→ map / statistics
+→ classified GeoTIFF
+```
 
-ranks;
+Emphasize that pixel classification is deterministic, not performed by the LLM.
 
-reranking score;
+---
 
-sources;
+# 17. Troubleshooting
 
-grounded answer.
+## Ollama connection error
 
-Record human feedback.
-
-Minute 4 — Evaluation / Governance
-
-Show LLM-as-a-judge and Monitoring → AI Governance.
-
-Minute 5 — Persistence
-
-Open Projects & Workflows.
-
-Show that an analysis can be saved and resumed.
-
-Minute 6 — Pipeline vs Agentic
-
-Run the same context-aware question through:
-
-Fixed LangChain;
-
-Agentic LangGraph.
-
-Explain why agentic AI is useful only when adaptive decisions are needed.
-
-15. Troubleshooting
-
-Ollama connection error
-
-Check:
-
+```cmd
 ollama serve
+```
 
-Then verify:
+Local endpoint:
 
+```text
 http://localhost:11434
+```
 
-For Docker on Windows:
+Docker on Windows:
 
+```text
 http://host.docker.internal:11434
+```
 
-FlashRank cannot download
+## FlashRank cannot download
 
-Corporate SSL inspection can block model downloads.
+Corporate SSL inspection can block first-time model downloads. GeoScope can use a local FlashRank cache. Do not commit the cache to Git.
 
-GeoScope supports using a local FlashRank cache.
-
-The model cache should not be committed to Git.
-
-Rasterio / Docker native-library error
+## Rasterio / Docker native-library error
 
 The Docker image must include the system libraries required by Rasterio/GDAL.
 
-If Docker works locally after the provided Dockerfile build, no application-code change is needed.
+## Nominatim / remote raster SSL error
 
-Nominatim / remote raster SSL error
+Corporate networks may use a self-signed root certificate. The correct production solution is to configure the trusted corporate CA.
 
-A corporate network may use a self-signed root certificate.
+## Monitoring shows `Not recorded`
 
-The correct production solution is to configure the trusted corporate CA.
+The run probably predates the richer observability schema. Leave **Show historical / incomplete runs** unchecked to focus on current fully instrumented runs.
 
-Temporary insecure SSL workarounds should not be considered production configuration.
+## LangChain / LangGraph do not appear in Monitoring
 
-16. Final perspective
+Run Page 9 using **Run fixed LangChain**, **Run agentic LangGraph**, or **Compare both**.
+
+## Page 10 has no AOI
+
+Create/select the AOI first on Page 2 or the relevant workflow page.
+
+## Page 10 cannot obtain imagery
+
+Check AOI, date range, cloud threshold, STAC access, and remote raster connectivity.
+
+---
+
+# 18. Current Limitations
+
+- no multi-tile mosaicking;
+- no full cloud-mask raster workflow;
+- no aligned multi-date raster cube;
+- no scheduled ingestion orchestration;
+- raster access depends on network availability;
+- query rewriting and reranking increase evaluation runtime;
+- Ollama Cloud page is a deployment/integration test, not the default runtime;
+- the LangGraph agent is deliberately bounded and is not a fully autonomous EO system;
+- vegetation classification uses transparent NDVI thresholds rather than a trained crop-type or land-cover model;
+- NDVI vegetation-signal classes are not validated agronomic crop-health categories;
+- context-token counts shown in Monitoring are estimates rather than exact tokenizer counts.
+
+---
+
+# 19. Final Perspective
 
 GeoScope is intentionally more than a chatbot.
 
-It demonstrates an AI-assisted Earth Observation workflow with:
-
+```text
 knowledge retrieval
++ advanced retrieval
 + real geographic context
 + satellite catalogue search
-+ raster processing
++ deterministic raster processing
++ vegetation-condition classification
 + human oversight
-+ automated evaluation
++ retrieval evaluation
++ LLM-as-a-judge
 + monitoring
++ prompt/context observability
 + AI governance
 + persistence
-+ fixed and agentic orchestration
++ LangChain fixed orchestration
++ LangGraph bounded agentic orchestration
++ Docker reproducibility
+```
 
 The central design principle is:
 
-AI should assist the researcher with evidence, context, and traceable tools — not hide the analytical process or replace domain expertise.
+> **AI should assist the researcher with evidence, context, and traceable tools — not hide the analytical process or replace domain expertise.**
