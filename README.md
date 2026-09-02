@@ -4,7 +4,7 @@
 
 GeoScope Agent is an **AI-assisted Earth Observation application** developed as a capstone project for the **LLM Zoomcamp**.
 
-It combines technical-document retrieval, geographic context, live Sentinel-2 catalogue search, raster processing, evaluation, human feedback, monitoring, AI governance, persistent analysis workflows, deterministic vegetation-condition classification, and a comparison between fixed and agentic orchestration.
+It combines technical-document retrieval, geographic context, live Sentinel-2 catalogue search, raster processing, evaluation, human feedback, monitoring, AI governance, persistent analysis workflows, deterministic natural-language GeoTIFF analysis, and a comparison between fixed and agentic orchestration.
 
 ![Earth Observation context in Egypt](documentation/images/earth_observation_context_egypt.jpeg)
 
@@ -16,7 +16,7 @@ GeoScope is implemented as a **Streamlit application rather than a notebook** so
 
 ### Recommended review path
 
-**AOI & STAC** → **Ask GeoAI** → **Evaluation & Feedback** → **Monitoring** → **Automated Demo** → **Pipeline vs Agentic** → **Vegetation Condition Classification**
+**AOI & STAC** → **Ask GeoAI** → **Evaluation & Feedback** → **Monitoring** → **Automated Demo** → **Pipeline vs Agentic** → **Ask Your GeoTIFF**
 
 For a quick review:
 
@@ -29,7 +29,7 @@ For a quick review:
 7. Review **LLM-as-a-judge** and **Monitoring / AI Governance**.
 8. Run the **Automated Demo** to see the end-to-end workflow with visible progress.
 9. Open **Pipeline vs Agentic** and compare LangChain and LangGraph using the same question.
-10. Open **Vegetation Condition Classification** to execute a deterministic EO task from AOI → NDVI → classified GeoTIFF.
+10. Open **Ask Your GeoTIFF** to execute a deterministic EO task from AOI → NDVI → classified GeoTIFF.
 
 > **Docker support is included for reproducibility.**  
 > The **Ollama Cloud** page is an isolated deployment/integration test and is **not required** for the normal local workflow.
@@ -98,7 +98,7 @@ Projects & Workflows
       ↓
 Pipeline vs Agentic
       ↓
-Vegetation Condition Classification
+Ask Your GeoTIFF
 ```
 
 ### 3.2 Application pages
@@ -114,7 +114,7 @@ Vegetation Condition Classification
 | **7 — Projects & Workflows** | Save, resume, complete, and archive persistent GeoScope projects. |
 | **8 — Cloud Deployment Test** | Test Ollama Cloud as an optional remote inference provider. |
 | **9 — Pipeline vs Agentic** | Compare a fixed LangChain pipeline with a bounded LangGraph agentic workflow and log both as fully instrumented runs. |
-| **10 — Vegetation Condition Classification** | Use the current AOI and a Sentinel-2 scene to compute NDVI, classify vegetation signal, show statistics/map output, and download a classified GeoTIFF. |
+| **10 — Ask Your GeoTIFF** | Generate or upload a GeoTIFF, ask natural-language questions about its actual raster values, run deterministic raster tools, and receive grounded explanations. NDVI natural-language GeoTIFF analysis remains available as one raster-analysis tool. |
 
 ---
 
@@ -436,7 +436,7 @@ Monitoring separates three concepts that should not be mixed:
 
 | Field | Meaning |
 |---|---|
-| **Application** | What GeoScope is doing — for example Crop monitoring or Vegetation condition classification |
+| **Application** | What GeoScope is doing — for example Crop monitoring or Ask Your GeoTIFF |
 | **Framework** | Which execution/orchestration layer is used — for example Application RAG, LangChain, LangGraph |
 | **Execution mode** | How that framework behaves for the run — for example Fixed RAG, Fixed pipeline, Agentic bounded workflow, Deterministic raster classification |
 
@@ -448,7 +448,7 @@ Examples:
 | Automated Demo | Automated GeoScope demo | Application RAG | Automated fixed RAG demo |
 | Page 9 fixed | Framework comparison | LangChain | Fixed pipeline |
 | Page 9 agentic | Framework comparison | LangGraph | Agentic bounded workflow |
-| Page 10 | Vegetation condition classification | Application geospatial workflow | Deterministic raster classification |
+| Page 10 | Ask Your GeoTIFF | Application geospatial workflow | Deterministic raster classification |
 
 This separation is intentional: **Crop monitoring and Urban heat are EO use cases. LangChain and LangGraph are orchestration frameworks.**
 
@@ -666,11 +666,11 @@ The demo is recorded as an **Application RAG** execution, not as LangChain or La
 
 ---
 
-## 🌿 14. Vegetation Condition Classification
+## 🌿 14. Ask Your GeoTIFF
 
 Page 10 demonstrates a bounded EO execution task:
 
-> “Using the current AOI, find a suitable Sentinel-2 image and create a vegetation-condition classification from NDVI.”
+> “Using the current AOI, find a suitable Sentinel-2 image and create a natural-language GeoTIFF analysis from NDVI.”
 
 The actual scientific processing is deterministic:
 
@@ -688,7 +688,7 @@ AOI
 The page deliberately logs:
 
 ```text
-Application = Vegetation condition classification
+Application = Ask Your GeoTIFF
 Framework = Application geospatial workflow
 Execution mode = Deterministic raster classification
 Model = No LLM used for pixel classification
@@ -903,7 +903,7 @@ This is an **optional deployment/integration test**, not the default GeoScope ru
 17. Open **Automated Demo** for the guided end-to-end walkthrough.
 18. Open **Pipeline vs Agentic** and select **Compare both**.
 19. Return to **Monitoring** and verify that **LangChain** and **LangGraph** now appear as separate execution frameworks.
-20. Open **Vegetation Condition Classification** and run the NDVI threshold-classification task.
+20. Open **Ask Your GeoTIFF** and run the NDVI threshold-classification task.
 
 ---
 
@@ -962,7 +962,7 @@ data/geoscope_workflows.duckdb
 | **Advanced retrieval** | Query rewriting + FlashRank reranking |
 | **Multiple retrieval approaches** | Four real pipelines |
 | **Geospatial processing** | AOI + STAC + NDVI + GeoTIFF |
-| **Bounded EO task execution** | NDVI vegetation-condition classification + classified GeoTIFF |
+| **Bounded EO task execution** | NDVI natural-language GeoTIFF analysis + classified GeoTIFF |
 | **Persistence** | Projects & Workflows |
 | **AI governance** | Explainability, transparency, oversight, traceability, quality |
 | **Agentic AI** | Bounded LangGraph workflow |
@@ -978,3 +978,38 @@ data/geoscope_workflows.duckdb
 For the full page-by-page instructions, see:
 
 **[documentation/USER_GUIDE.md](documentation/USER_GUIDE.md)**
+
+
+## 🗺️ Ask Your GeoTIFF
+
+Page 10 extends GeoScope from document Q&A to **natural-language querying of raster data**.
+
+```text
+GeoTIFF
+→ deterministic raster inspection/tool
+→ user NLQ
+→ computed result
+→ grounded LLM explanation
+```
+
+Examples include:
+
+- `What is the average NDVI?`
+- `What are the minimum and maximum values?`
+- `What percentage of the AOI has NDVI above 0.6?`
+- `How many valid pixels are there?`
+- `What is the CRS and pixel resolution?`
+- `Summarize this raster.`
+
+The raster can be generated by GeoScope or uploaded by the user. For NDVI rasters, Page 10 can also calculate transparent vegetation-signal classes.
+
+**The LLM does not calculate pixel values.** Numerical results and classification are produced by deterministic geospatial code; the LLM only explains the computed result.
+
+Monitoring taxonomy for these NLQ runs:
+
+```text
+Application = Natural-language GeoTIFF analysis
+Framework = Application geospatial workflow
+Execution mode = Natural-language raster query
+```
+

@@ -51,7 +51,7 @@ With GeoScope, an Earth Observation researcher can:
 - run an automated end-to-end demonstration with visible progress;
 - save, resume, complete, and archive persistent analysis projects;
 - compare a fixed LangChain pipeline with a bounded LangGraph agentic workflow;
-- execute a deterministic vegetation-condition classification from Sentinel-2 NDVI;
+- execute a deterministic natural-language GeoTIFF analysis from Sentinel-2 NDVI;
 - generate a classified GeoTIFF and mapped class statistics;
 - run GeoScope locally, validate it through Docker, and test Ollama Cloud integration separately.
 
@@ -137,7 +137,7 @@ OLLAMA_JUDGE_MODEL = "llama3.1:8b"
        ↓
 9. Compare fixed vs agentic orchestration
        ↓
-10. Execute vegetation-condition classification
+10. Ask natural-language questions about a GeoTIFF
 ```
 
 The steps do not always have to be executed in this exact order. GeoScope is deliberately exploratory.
@@ -632,38 +632,111 @@ This allows Page 5 to show LangChain and LangGraph as distinct execution framewo
 
 ---
 
-# 14. Page 10 — Vegetation Condition Classification
+# 14. Page 10 — Ask Your GeoTIFF
 
 ## Objective
 
-Execute a bounded Earth Observation task from the current AOI and Sentinel-2 imagery.
+Query **actual GeoTIFF raster values in natural language**.
 
-Example request:
-
-> Using the current AOI, find a suitable Sentinel-2 image and create a vegetation-condition classification from NDVI.
-
-Workflow:
+This page is different from Page 3:
 
 ```text
-Task request
-→ inspect current AOI
-→ find / reuse Sentinel-2 imagery
-→ read Red + NIR
-→ calculate NDVI
-→ classify NDVI
-→ calculate statistics
-→ create classified GeoTIFF
-→ map result
-→ log execution
+Page 3 — Ask GeoAI
+→ questions over technical knowledge + EO context
+
+Page 10 — Ask Your GeoTIFF
+→ questions over actual raster values
 ```
 
-### Why this is not generic land-cover classification
+The page can work with:
 
-Page 10 implements **NDVI vegetation-signal classification**.
+- an NDVI GeoTIFF generated from the current AOI and Sentinel-2 scene; or
+- an uploaded `.tif` / `.tiff` file.
 
-It does not claim to classify crop species, general land cover, buildings, roads, or validated crop health.
+## User flow
 
-### Current classes
+```text
+1. Choose raster source
+       ↓
+2. Inspect raster
+       ↓
+3. Ask a natural-language question
+       ↓
+4. GeoScope routes the question to a deterministic raster tool
+       ↓
+5. Raster code computes the result
+       ↓
+6. LLM explains only that computed result
+```
+
+The question field is always visible. It remains disabled until a raster is ready.
+
+## Example questions
+
+Supported examples include:
+
+- `What is the average NDVI?`
+- `What are the minimum and maximum values?`
+- `What percentage of the AOI has NDVI above 0.6?`
+- `What percentage of pixels are below 0.2?`
+- `How many valid pixels are there?`
+- `What is the CRS and pixel resolution?`
+- `Summarize this raster.`
+
+If the raster is explicitly treated as NDVI, the user can also ask questions such as:
+
+- `How much of the raster has high vegetation signal?`
+- `How much has low or moderate vegetation signal?`
+- `Show the vegetation-condition class distribution.`
+
+## Deterministic raster tools
+
+GeoScope routes bounded NLQ requests to deterministic operations such as:
+
+```text
+raster metadata
+raster mean / median / min / max
+valid-pixel count
+percentage above threshold
+percentage below threshold
+NDVI class distribution
+raster summary
+```
+
+The numerical values come from raster processing code, **not from the LLM**.
+
+## Role of the LLM
+
+The LLM receives:
+
+```text
+user question
++ deterministic tool result
+```
+
+and produces a concise grounded explanation.
+
+For example:
+
+```text
+Question:
+What percentage of the AOI has NDVI above 0.6?
+
+Deterministic raster tool:
+percentage_above_threshold
+→ 27.4%
+
+LLM:
+Approximately 27.4% of valid raster pixels have NDVI above 0.6.
+```
+
+The LLM is instructed not to invent pixel values, percentages, coordinates, or unsupported scientific conclusions.
+
+## NDVI natural-language GeoTIFF analysis
+
+The earlier natural-language GeoTIFF analysis remains available as **one raster-analysis capability**, not the main purpose of Page 10.
+
+Current transparent NDVI classes are:
 
 | NDVI range | Interpretation |
 |---|---|
@@ -673,33 +746,47 @@ It does not claim to classify crop species, general land cover, buildings, roads
 | `0.40–0.60` | Moderate vegetation signal |
 | `≥ 0.60` | High vegetation signal |
 
-These thresholds are transparent demonstration rules and should not be treated as universal agronomic rules.
+These are demonstration thresholds. They are not universal agronomic rules and are not a crop-type or general land-cover model.
 
-### Outputs
+## Monitoring integration
 
-The page can produce:
-
-- class distribution statistics;
-- pixel counts;
-- percentages;
-- interactive classified map;
-- original NDVI GeoTIFF;
-- classified GeoTIFF.
-
-### Scientific and AI separation
-
-The LLM does **not** classify pixels. Raster calculations are deterministic.
-
-Monitoring records:
+Natural-language raster-query runs are logged as:
 
 ```text
-Application = Vegetation condition classification
+Application = Natural-language GeoTIFF analysis
 Framework = Application geospatial workflow
-Execution mode = Deterministic raster classification
-Model = No LLM used for pixel classification
+Execution mode = Natural-language raster query
 ```
 
----
+The run can also record:
+
+- model;
+- prompt ID/version;
+- raster tool used;
+- raster filename;
+- deterministic tool result;
+- execution trace;
+- runtime.
+
+## Current NLQ scope
+
+Supported now:
+
+- band-1 statistics;
+- raster metadata;
+- threshold percentages;
+- NDVI vegetation-signal classes;
+- raster summaries.
+
+Not yet supported:
+
+- arbitrary zonal questions;
+- directional questions such as `Where is vegetation weakest?`;
+- robust comparison between two raster dates;
+- free-form spatial reasoning over arbitrary regions inside the image.
+
+GeoScope does not silently approximate unsupported spatial questions.
+
 
 # 15. Docker Usage
 
@@ -767,20 +854,29 @@ Show the visible progress counter and guided end-to-end execution.
 
 Run **Compare both** and show LangChain vs LangGraph traces and their Monitoring rows.
 
-### Minute 7 — Vegetation Classification
+### Minute 7 — Ask Your GeoTIFF
+
+Use a generated NDVI GeoTIFF or upload a raster.
+
+Ask, for example:
+
+```text
+What percentage of the AOI has NDVI above 0.6?
+```
 
 Show:
 
 ```text
-AOI
-→ Sentinel-2
-→ NDVI
-→ vegetation-signal classes
-→ map / statistics
-→ classified GeoTIFF
+NLQ
+→ deterministic raster tool
+→ computed result
+→ grounded LLM explanation
 ```
 
-Emphasize that pixel classification is deterministic, not performed by the LLM.
+Then optionally show the NDVI vegetation-condition class distribution.
+
+Emphasize that numerical raster analysis is deterministic and the LLM only explains the result.
+
 
 ---
 
@@ -824,11 +920,16 @@ The run probably predates the richer observability schema. Leave **Show historic
 
 Run Page 9 using **Run fixed LangChain**, **Run agentic LangGraph**, or **Compare both**.
 
-## Page 10 has no AOI
+## Page 10 has no raster ready
 
-Create/select the AOI first on Page 2 or the relevant workflow page.
+Page 10 can use either:
 
-## Page 10 cannot obtain imagery
+- a GeoTIFF generated by GeoScope; or
+- an uploaded `.tif` / `.tiff`.
+
+If using the generated NDVI path, create/select the AOI first and generate the raster before asking a question.
+
+## Page 10 cannot generate the NDVI raster
 
 Check AOI, date range, cloud threshold, STAC access, and remote raster connectivity.
 
@@ -844,7 +945,7 @@ Check AOI, date range, cloud threshold, STAC access, and remote raster connectiv
 - query rewriting and reranking increase evaluation runtime;
 - Ollama Cloud page is a deployment/integration test, not the default runtime;
 - the LangGraph agent is deliberately bounded and is not a fully autonomous EO system;
-- vegetation classification uses transparent NDVI thresholds rather than a trained crop-type or land-cover model;
+- Page 10 NLQ is currently bounded to raster statistics, metadata, thresholds, NDVI class distribution, and summaries;
 - NDVI vegetation-signal classes are not validated agronomic crop-health categories;
 - context-token counts shown in Monitoring are estimates rather than exact tokenizer counts.
 
@@ -860,7 +961,7 @@ knowledge retrieval
 + real geographic context
 + satellite catalogue search
 + deterministic raster processing
-+ vegetation-condition classification
++ natural-language GeoTIFF analysis
 + human oversight
 + retrieval evaluation
 + LLM-as-a-judge
